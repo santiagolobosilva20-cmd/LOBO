@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - modules
+        - bootstrap/app.php
+        - bootstrap/providers.php
+    excludePaths:
+        - modules/*/Tests/*
+    level: 8
