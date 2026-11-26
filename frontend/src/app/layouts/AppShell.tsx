@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  AlertTriangle,
   Clock,
   CreditCard,
   Home,
@@ -45,7 +44,6 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const currentTitle = ROUTE_TITLES[location.pathname] ?? 'Resumen';
-  const ActiveIcon = NAV_ITEMS.find((item) => item.to === location.pathname)?.icon ?? Home;
 
   const healthQuery = useQuery({
     queryKey: ['healthz'],
@@ -71,95 +69,114 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
   const hours = clubStatus?.hours ?? 'Lun a sáb · 06:00–22:00';
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between bg-white px-4 py-6">
-      <div>
-        <div className="mb-8 flex items-center justify-between px-1">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#CEF542] text-base font-black text-[#17191C]">
-              L
-            </div>
-            <div>
-              <p className="text-base font-extrabold leading-none tracking-tight text-[#17191C]">LOBO</p>
-              <p className="mt-1 text-[9px] font-semibold tracking-wider text-[#6B7280] uppercase">
-                Club de entrenamiento
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="rounded-lg p-1 text-[#6B7280] lg:hidden"
-            aria-label="Cerrar menú"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <div className="flex h-full flex-col bg-white px-[18px] pt-[29px] pb-[17px]">
+      <div className="flex items-center justify-between px-[9px]">
+        <NavLink to="/" className="flex items-center gap-[11px] text-[#22251f] no-underline">
+          <span className="font-display grid h-[39px] w-[39px] shrink-0 -rotate-4 place-items-center bg-[#d3f36b] text-[24px] leading-none font-bold text-[#22251f]">
+            L
+          </span>
+          <span className="flex flex-col gap-[2px]">
+            <strong className="font-display text-[19px] leading-none font-bold text-[#22251f]">
+              LOBO
+            </strong>
+            <small className="text-[8px] font-bold tracking-[0.02em] text-[#8a8c83] uppercase">
+              CLUB DE ENTRENAMIENTO
+            </small>
+          </span>
+        </NavLink>
 
-        <p className="mb-2.5 px-2 text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-          Menú principal
-        </p>
-
-        <nav className="space-y-1.5" aria-label="Menú principal">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              onClick={() => setMobileOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-[#CEF542] font-semibold text-[#17191C]'
-                    : 'font-medium text-[#4B5563] hover:bg-[#F5F5F0] hover:text-[#17191C]'
-                }`
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="rounded-[3px] p-1 text-[#686b63] hover:bg-[#f5f6f1] lg:hidden"
+          aria-label="Cerrar menú"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
-      <div className="space-y-3 border-t border-[#E6E7E2] pt-4">
-        <div className="rounded-xl border border-[#E6E7E2] bg-[#FAFBF9] px-3 py-2.5">
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full ${isOpen ? 'bg-emerald-500' : 'bg-amber-500'}`}
-              aria-hidden="true"
-            />
-            <span className="text-xs font-semibold text-[#17191C]">
-              {isOpen ? 'Gimnasio abierto' : 'Fuera de horario'}
-            </span>
+      <div className="mx-[10px] mt-[47px] mb-[12px] text-[9px] font-bold tracking-[0.02em] text-[#9c9e96] uppercase">
+        MENÚ PRINCIPAL
+      </div>
+
+      <nav className="grid gap-[5px]" aria-label="Navegación principal">
+        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex min-h-[43px] w-full items-center gap-[12px] rounded-[3px] px-[12px] text-left text-[12px] font-semibold transition-colors ${
+                isActive
+                  ? 'bg-[#d3f36b] text-[#22251f]'
+                  : 'text-[#686b63] hover:bg-[#f5f6f1] hover:text-[#22251f]'
+              }`
+            }
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.6]" aria-hidden="true" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="mt-auto">
+        <div className="my-3 mb-[19px] flex items-start gap-[9px] rounded-[3px] border border-[#e8e9e3] bg-white px-[10px] py-[12px] text-[11px] font-bold text-[#3d4039]">
+          <span
+            className={`mt-[3px] inline-block h-[7px] w-[7px] shrink-0 rounded-full ${
+              isOpen ? 'live-dot-ring' : 'bg-amber-500'
+            }`}
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <span>{isOpen ? 'Gimnasio abierto' : 'Fuera de horario'}</span>
+            <small className="tabular-nums mt-1 block text-[9px] font-medium text-[#85877f]">
+              {hours}
+            </small>
+            {dbDisconnected ? (
+              <div
+                role="status"
+                className="mt-2 flex items-center justify-between gap-2 border-t border-[#eff0eb] pt-2 text-[9px] font-semibold text-amber-700"
+              >
+                <span>PostgreSQL offline</span>
+                <button
+                  type="button"
+                  onClick={() => void healthQuery.refetch()}
+                  className="inline-flex items-center gap-1 rounded-[3px] border border-[#e8e9e3] bg-[#f8f9f5] px-1.5 py-0.5 text-[9px] font-bold text-[#22251f] hover:bg-[#d3f36b]"
+                >
+                  <RefreshCw className="h-2.5 w-2.5" />
+                  Reintentar
+                </button>
+              </div>
+            ) : null}
           </div>
-          <p className="tabular-nums mt-0.5 pl-4 text-[11px] text-[#6B7280]">{hours}</p>
         </div>
 
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#17191C] text-xs font-bold text-white">
-              LC
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#17191C]">LOBO Club</p>
-              <p className="text-[11px] text-[#6B7280]">Administración</p>
-            </div>
+        <div className="flex items-center gap-[9px] border-t border-[#e8e9e3] px-1 pt-[13px]">
+          <div className="grid h-[31px] w-[31px] shrink-0 place-items-center rounded-full bg-[#22251f] text-[10px] font-bold text-[#d3f36b]">
+            LC
           </div>
-          <MoreHorizontal className="h-4 w-4 text-[#9CA3AF]" aria-hidden="true" />
+          <span className="grid gap-[3px] text-[10px]">
+            <strong className="font-bold text-[#22251f]">LOBO Club</strong>
+            <small className="text-[9px] text-[#85877f]">Administración</small>
+          </span>
+          <MoreHorizontal className="ml-auto h-4 w-4 text-[#93958c]" aria-hidden="true" />
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F0]">
-      <aside className="hidden w-[236px] shrink-0 border-r border-[#E6E7E2] bg-white lg:block">
-        <div className="sticky top-0 h-screen">{sidebarContent}</div>
+    <div className="min-h-screen bg-[#f3f4ef]">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-[218px] border-r border-[#e8e9e3] bg-white lg:block xl:w-[244px]">
+        {sidebarContent}
       </aside>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div className="w-64 border-r border-[#E6E7E2] bg-white shadow-xl">{sidebarContent}</div>
+          <div className="w-[244px] border-r border-[#e8e9e3] bg-white shadow-[10px_0_30px_rgba(23,26,22,0.08)]">
+            {sidebarContent}
+          </div>
           <button
             type="button"
             aria-label="Cerrar menú lateral"
@@ -169,66 +186,36 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="px-5 pt-4 sm:px-8">
-          <div className="flex h-12 items-center justify-between border-b border-[#E6E7E2] pb-3">
-            <div className="flex items-center gap-2.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setMobileOpen(true)}
-                className="rounded-lg p-1.5 text-[#4B5563] hover:bg-white lg:hidden"
-                aria-label="Abrir menú"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <span className="font-semibold tracking-wide text-[#9CA3AF] uppercase">LOBO CLUB</span>
-              <span className="text-[#D1D5DB]">/</span>
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[#17191C]">
-                <ActiveIcon className="h-3.5 w-3.5 text-[#6B7280]" />
-                {currentTitle}
-              </span>
-            </div>
+      <div className="min-h-screen max-w-[1600px] px-[17px] pb-[30px] md:px-[25px] lg:ml-[218px] lg:px-[43px] xl:ml-[244px] 2xl:mr-auto">
+        <header className="flex h-[59px] items-center justify-between gap-[11px] border-b border-[#e6e7e1] md:h-[71px]">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="p-1 text-[#22251f] lg:hidden"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-            <div className="flex items-center gap-3">
-              <span className="hidden text-xs text-[#6B7280] sm:inline">{formatSpanishDateHeader()}</span>
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F27D62] text-xs font-bold text-white"
-                title="LOBO Club Administración"
-              >
-                LC
-              </div>
-            </div>
+          <div className="mr-auto text-[8px] font-bold tracking-[0.02em] text-[#898b83] uppercase sm:text-[9px]">
+            LOBO CLUB <span className="mx-[5px] text-[#c3c4bd] sm:mx-[10px]">/</span>{' '}
+            <strong className="text-[#22251f] normal-case">{currentTitle}</strong>
+          </div>
+
+          <div className="flex items-center gap-[14px]">
+            <span className="hidden text-[10px] text-[#73756e] sm:inline">
+              {formatSpanishDateHeader()}
+            </span>
+            <span
+              className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full bg-[#ff8068] text-[10px] font-bold text-[#22251f] sm:h-[31px] sm:w-[31px]"
+              title="LOBO Club Administración"
+            >
+              LC
+            </span>
           </div>
         </header>
 
-        <main className="flex-1 px-5 py-5 sm:px-8">
-          {dbDisconnected ? (
-            <div
-              role="alert"
-              className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-950"
-            >
-              <div className="flex items-center gap-2.5">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
-                <div>
-                  <strong className="font-semibold">Base de datos PostgreSQL desconectada:</strong>{' '}
-                  inicia el servicio local en el puerto 5432 y ejecuta{' '}
-                  <code className="rounded bg-amber-100 px-1 py-0.5">php backend/artisan migrate --seed</code> para
-                  persistir socios, pagos y clases.
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void healthQuery.refetch()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2.5 py-1 font-semibold text-amber-900 hover:bg-amber-100"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Reintentar
-              </button>
-            </div>
-          ) : null}
-
-          {children}
-        </main>
+        <main className="view-appear pt-[17px] md:pt-[26px]">{children}</main>
       </div>
     </div>
   );

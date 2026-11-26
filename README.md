@@ -74,8 +74,8 @@ flowchart LR
 │   ├── public/images/                # Recursos fotográficos locales (hero y 4 entrenamientos)
 │   └── src/
 │       ├── app/                      # Enrutador, QueryClient y AppShell (sidebar LOBO + topbar + alerta DB)
-│       ├── features/                 # dashboard, billing (drawer Caja LOBO), members, schedule, plans, workouts
-│       ├── shared/                   # Cliente HTTP tipado, KpiCard y formateadores MXN/fechas
+│       ├── features/                 # dashboard, billing (modal Caja LOBO y PaymentsTable), members, schedule, plans, workouts
+│       ├── shared/                   # Cliente HTTP tipado, KpiCard, ToastContext y formateadores MXN/fechas
 │       └── tests/                    # Pruebas Vitest + Testing Library
 ├── .env.example                      # Plantilla raíz sincronizada de variables de entorno
 ├── LICENSE                           # Licencia MIT

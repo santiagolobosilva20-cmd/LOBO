@@ -67,20 +67,22 @@ export function WorkoutsPage() {
   const workouts = workoutsQuery.data?.data?.length ? workoutsQuery.data.data : DEFAULT_WORKOUTS;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-          Entrena con intención
-        </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17191C] sm:text-3xl">
-          Entrenamientos
-        </h1>
-        <p className="mt-1 text-xs text-[#6B7280] sm:text-sm">
-          Clases para ganar fuerza, energía y confianza.
-        </p>
+    <div>
+      <div className="mt-[9px] mb-[19px] flex flex-wrap items-end justify-between gap-[18px] md:mt-3 md:mb-6">
+        <div>
+          <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+            ENTRENA CON INTENCIÓN
+          </span>
+          <h1 className="font-display mt-[7px] text-[25px] leading-[1.15] font-semibold text-[#22251f] sm:text-[29px]">
+            Entrenamientos
+          </h1>
+          <p className="mt-[7px] max-w-[240px] text-[11px] leading-normal text-[#83857d] sm:max-w-none">
+            Clases para ganar fuerza, energía y confianza.
+          </p>
+        </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <section className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
         {workouts.map((workout, idx) => {
           const orderNum = String(workout.display_order || idx + 1).padStart(2, '0');
           const imgSrc = workout.image_url || DEFAULT_WORKOUTS[idx % DEFAULT_WORKOUTS.length].image_url!;
@@ -88,31 +90,35 @@ export function WorkoutsPage() {
           return (
             <article
               key={workout.id}
-              className="relative flex min-h-[240px] flex-col justify-end overflow-hidden rounded-2xl bg-[#16181A] p-6 text-white"
+              className="relative flex min-h-[205px] items-end overflow-hidden bg-[#181c17] p-[21px] text-white sm:min-h-[226px]"
             >
               <img
                 src={imgSrc}
                 alt={workout.name}
-                className="absolute inset-0 h-full w-full object-cover opacity-70"
+                className="absolute inset-0 h-full w-full object-cover object-center"
               />
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25"
+                className="absolute inset-0 bg-gradient-to-b from-[#181c170f] to-[#181c17f0]"
                 aria-hidden="true"
               />
 
-              <span className="tabular-nums absolute top-5 right-6 text-sm font-semibold text-white/65">
+              <span className="font-display tabular-nums absolute top-[15px] right-[18px] z-10 text-[18px] font-semibold text-white/80">
                 {orderNum}
               </span>
 
-              <div className="relative z-10 max-w-md">
-                <p className="text-[10px] font-bold tracking-wider text-[#CEF542] uppercase">
+              <div className="relative z-10">
+                <span className="block text-[8px] font-bold text-[#d3f36b] uppercase">
                   {workout.category} · {workout.default_duration_minutes} MIN
-                </p>
-                <h2 className="mt-1.5 text-2xl font-bold tracking-tight">{workout.name}</h2>
+                </span>
+                <h2 className="font-display mt-[7px] mb-[5px] text-[20px] font-semibold">
+                  {workout.name}
+                </h2>
                 {workout.description ? (
-                  <p className="mt-1.5 text-xs leading-relaxed text-gray-200">{workout.description}</p>
+                  <p className="max-w-[400px] text-[10px] leading-[1.55] text-[#e1e2dd]">
+                    {workout.description}
+                  </p>
                 ) : null}
-                <span className="mt-4 inline-flex rounded-md bg-[#CEF542] px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-[#17191C] uppercase">
+                <span className="mt-3 inline-block bg-[#d3f36b] px-[7px] py-[5px] text-[7px] font-bold text-[#22251f] uppercase">
                   {workout.badge_label}
                 </span>
               </div>

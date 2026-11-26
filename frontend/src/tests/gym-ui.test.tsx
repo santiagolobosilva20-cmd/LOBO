@@ -7,6 +7,7 @@ import { PlansPage } from '../features/plans/PlansPage';
 import { ApiError, extractApiError, requestJson } from '../shared/api/http';
 import {
   formatCurrencyFromCents,
+  getMemberInitials,
   getMemberStatusLabel,
   getPaymentMethodLabel,
 } from '../shared/utils/format';
@@ -15,6 +16,7 @@ describe('format helpers', () => {
   it('formats cents to currency string and translates domain labels', () => {
     expect(formatCurrencyFromCents(0)).toBe('$0.00');
     expect(formatCurrencyFromCents(89000)).toBe('$890.00');
+    expect(getMemberInitials('Alex Rivera')).toBe('AR');
     expect(getPaymentMethodLabel('cash')).toBe('Efectivo');
     expect(getMemberStatusLabel('active')).toBe('Activo');
   });

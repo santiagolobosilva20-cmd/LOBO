@@ -48,6 +48,17 @@ const WORKOUT_LEVEL_LABELS: Record<WorkoutLevel, string> = {
   advanced: 'Avanzado',
 };
 
+export function getMemberInitials(fullName: string): string {
+  const tokens = fullName.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) {
+    return 'LC';
+  }
+  return tokens
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 export function getWorkoutLevelLabel(level: WorkoutLevel): string {
   return WORKOUT_LEVEL_LABELS[level] ?? level;
 }

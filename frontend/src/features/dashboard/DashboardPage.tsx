@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Clock, DollarSign, Plus, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Clock, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { requestJson } from '../../shared/api/http';
 import type { DashboardSummary, SingleResponse } from '../../shared/api/types';
 import { KpiCard } from '../../shared/components/KpiCard';
-import { formatWeekdayProgressLabel, getPaymentMethodLabel } from '../../shared/utils/format';
+import { formatWeekdayProgressLabel } from '../../shared/utils/format';
+import { PaymentsTable } from '../billing/PaymentsTable';
 import { RegisterPaymentModal } from '../billing/RegisterPaymentModal';
 
 const DEFAULT_FEATURED = [
@@ -16,7 +17,7 @@ const DEFAULT_FEATURED = [
     name: 'Fuerza funcional',
     meta: 'Sala Norte · 45 min',
     ratio: '8/12',
-    color: '#CEF542',
+    color: '#b6dc4a',
   },
   {
     id: 2,
@@ -25,7 +26,7 @@ const DEFAULT_FEATURED = [
     name: 'Boxeo',
     meta: 'Ring · 50 min',
     ratio: '6/10',
-    color: '#EF4444',
+    color: '#ff8068',
   },
   {
     id: 3,
@@ -34,9 +35,18 @@ const DEFAULT_FEATURED = [
     name: 'Spinning',
     meta: 'Sala Sur · 40 min',
     ratio: '10/14',
-    color: '#3B82F6',
+    color: '#78b9e5',
   },
 ];
+
+function normalizeBarColor(color: string | undefined, index: number): string {
+  if (!color || color.toUpperCase() === '#CEF542') {
+    return index === 0 ? '#b6dc4a' : index === 1 ? '#ff8068' : '#78b9e5';
+  }
+  if (color.toUpperCase() === '#EF4444') return '#ff8068';
+  if (color.toUpperCase() === '#3B82F6') return '#78b9e5';
+  return color;
+}
 
 export function DashboardPage() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -52,7 +62,7 @@ export function DashboardPage() {
   const recentPayments = summary?.recent_payments ?? [];
   const featured =
     summary?.featured_sessions && summary.featured_sessions.length > 0
-      ? summary.featured_sessions.map((s) => {
+      ? summary.featured_sessions.map((s, idx) => {
           const [timePart, periodPart] = s.start_time_label.split(' ');
           return {
             id: s.id,
@@ -61,7 +71,7 @@ export function DashboardPage() {
             name: s.workout_name,
             meta: `${s.room} · ${s.duration_minutes} min`,
             ratio: `${s.enrolled_count}/${s.capacity}`,
-            color: s.accent_color || '#CEF542',
+            color: normalizeBarColor(s.accent_color, idx),
           };
         })
       : DEFAULT_FEATURED;
@@ -69,161 +79,139 @@ export function DashboardPage() {
   const nextTimeParts = (kpis?.next_session?.start_time_label ?? '07:00 AM').split(' ');
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl bg-[#16181A] text-white">
+    <div>
+      <section className="relative flex min-h-[213px] flex-col justify-between gap-4 overflow-hidden bg-[#2a3025] px-[20px] py-[23px] text-white sm:flex-row sm:items-center sm:px-[35px] sm:py-[27px] md:min-h-[225px]">
         <img
           src="/images/hero-gym.jpg"
           alt="Área de entrenamiento en LOBO Club"
-          className="absolute inset-0 h-full w-full object-cover opacity-55"
+          className="absolute inset-0 h-full w-full object-cover object-[50%_48%]"
         />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-[#111315]/95 via-[#111315]/70 to-[#111315]/45"
+          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(20,25,20,0.91)_0%,rgba(20,25,20,0.72)_48%,rgba(20,25,20,0.18)_100%)]"
           aria-hidden="true"
         />
 
-        <div className="relative flex flex-col justify-between gap-6 px-7 py-8 md:flex-row md:items-end">
-          <div className="max-w-xl">
-            <p className="text-[11px] font-bold tracking-widest text-[#CEF542] uppercase">
-              Tu espacio. Tu ritmo.
-            </p>
-            <h1 className="mt-2.5 text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
-              Entrena hoy.
-              <span className="block text-[#CEF542]">Supera tu marca.</span>
-            </h1>
-            <p className="mt-3 text-xs text-gray-300 sm:text-sm">
-              El progreso se construye una sesión a la vez.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-start gap-1.5 md:items-end">
-            <span className="text-[11px] text-gray-200">¿Entró un pago?</span>
-            <button
-              type="button"
-              onClick={() => setPaymentModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#CEF542] px-4 py-2.5 text-xs font-bold text-[#17191C] transition-colors hover:bg-[#C1EA2C]"
-            >
-              <Plus className="h-4 w-4" />
-              Registrar ingreso
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="kpis-heading" className="space-y-3.5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-              {formatWeekdayProgressLabel()}
-            </p>
-            <h2 id="kpis-heading" className="text-xl font-bold tracking-tight text-[#17191C]">
-              Tu gimnasio, al día
-            </h2>
-          </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#E6E7E2] bg-white px-3 py-1 text-xs font-medium text-[#4B5563]">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-            Este mes
+        <div className="relative z-10">
+          <span className="block text-[9px] font-bold text-[#d3f36b] uppercase">
+            TU ESPACIO. TU RITMO.
           </span>
+          <h1 className="font-display mt-3 mb-2 text-[29px] leading-[1.03] font-semibold sm:text-[31px] md:text-[37px]">
+            Entrena hoy.
+            <br />
+            <span className="text-[#d3f36b]">Supera tu marca.</span>
+          </h1>
+          <p className="max-w-[230px] text-[11px] leading-normal text-[#d1d2cb] sm:max-w-none">
+            El progreso se construye una sesión a la vez.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard
-            label="Ingresos del mes"
-            value={kpis?.formatted_monthly_revenue ?? '$0.00'}
-            subtitle="Pagos registrados este mes"
-            icon={<DollarSign className="h-4 w-4 text-[#17191C]" />}
-            iconBgClass="bg-[#CEF542]"
-          />
-          <KpiCard
-            label="Socios activos"
-            value={kpis?.active_members_count ?? 0}
-            subtitle="Personas en tu comunidad"
-            icon={<Users className="h-4 w-4 text-rose-700" />}
-            iconBgClass="bg-rose-50"
-          />
-          <KpiCard
-            label="Pagos registrados"
-            value={kpis?.monthly_payments_count ?? 0}
-            subtitle="Movimientos de este mes"
-            icon={<TrendingUp className="h-4 w-4 text-sky-700" />}
-            iconBgClass="bg-sky-50"
-          />
-          <KpiCard
-            label="Próxima clase"
-            value={
-              <span>
-                {nextTimeParts[0]}{' '}
-                <span className="text-xs font-semibold text-[#6B7280]">{nextTimeParts[1] ?? ''}</span>
-              </span>
-            }
-            subtitle={
-              kpis?.next_session
-                ? `${kpis.next_session.workout_name} · ${kpis.next_session.room}`
-                : 'Fuerza funcional · Sala Norte'
-            }
-            icon={<Clock className="h-4 w-4 text-white" />}
-            iconBgClass="bg-[#17191C]"
-          />
+        <div className="relative z-10 mt-auto flex flex-col items-start gap-[9px] sm:items-end">
+          <span className="text-[10px] text-[#e3e3de]">¿Entró un pago?</span>
+          <button
+            type="button"
+            onClick={() => setPaymentModalOpen(true)}
+            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+          >
+            <span className="text-[15px] leading-none">＋</span> Registrar ingreso
+          </button>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <div className="rounded-xl border border-[#E6E7E2] bg-white p-5">
-            <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mt-[28px] mb-[15px] flex items-end justify-between gap-2">
+        <div>
+          <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+            {formatWeekdayProgressLabel()}
+          </span>
+          <h2 className="font-display mt-[5px] text-[19px] leading-[1.15] font-semibold text-[#22251f] sm:text-[22px]">
+            Tu gimnasio, al día
+          </h2>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-[3px] border border-[#e4e6de] bg-white px-[10px] py-2 text-[9px] text-[#686b63]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#80bd42]" aria-hidden="true" />
+          Este mes
+        </span>
+      </div>
+
+      <section aria-label="Indicadores del mes" className="grid grid-cols-2 gap-[8px] sm:gap-[12px] xl:grid-cols-4">
+        <KpiCard
+          label="Ingresos del mes"
+          value={kpis?.formatted_monthly_revenue ?? '$0.00'}
+          subtitle="Pagos registrados este mes"
+          icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
+          iconBgClass="bg-[#d3f36b]"
+        />
+        <KpiCard
+          label="Socios activos"
+          value={kpis?.active_members_count ?? 0}
+          subtitle="Personas en tu comunidad"
+          icon={<Users className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
+          iconBgClass="bg-[#ffe0d8]"
+        />
+        <KpiCard
+          label="Pagos registrados"
+          value={kpis?.monthly_payments_count ?? 0}
+          subtitle="Movimientos de este mes"
+          icon={<TrendingUp className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
+          iconBgClass="bg-[#dceefa]"
+        />
+        <KpiCard
+          label="Próxima clase"
+          value={
+            <>
+              {nextTimeParts[0]}{' '}
+              <span className="font-sans text-[11px] font-semibold text-[#22251f]">
+                {nextTimeParts[1] ?? ''}
+              </span>
+            </>
+          }
+          subtitle={
+            kpis?.next_session
+              ? `${kpis.next_session.workout_name} · ${kpis.next_session.room}`
+              : 'Fuerza funcional · Sala Norte'
+          }
+          icon={<Clock className="h-[13px] w-[13px] stroke-[2] text-[#d3f36b]" />}
+          iconBgClass="bg-[#252922]"
+        />
+      </section>
+
+      <section className="mt-[14px] grid grid-cols-1 gap-[10px] sm:gap-[13px] lg:grid-cols-[minmax(0,1.65fr)_minmax(270px,0.95fr)]">
+        <div className="min-w-0">
+          <div className="min-w-0 overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white">
+            <div className="flex min-h-[72px] items-center justify-between gap-3 px-[18px] py-[14px]">
               <div>
-                <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-                  Movimientos recientes
-                </p>
-                <h3 className="text-base font-bold text-[#17191C]">Ingresos por socio</h3>
+                <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+                  MOVIMIENTOS RECIENTES
+                </span>
+                <h3 className="font-display mt-1 text-[15px] leading-[1.2] font-semibold text-[#22251f]">
+                  Ingresos por socio
+                </h3>
               </div>
               <Link
                 to="/socios"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#4B5563] hover:text-[#17191C]"
+                className="inline-flex items-center gap-1 py-1.5 pl-2 text-[10px] font-semibold whitespace-nowrap text-[#65685f] hover:text-[#22251f]"
               >
-                Ver todos <ArrowRight className="h-3.5 w-3.5" />
+                Ver todos <span className="ml-0.5">→</span>
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[#E6E7E2] bg-[#FAFBF9] text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-                    <th className="px-3 py-2.5">Socio</th>
-                    <th className="px-3 py-2.5">Plan</th>
-                    <th className="px-3 py-2.5">Fecha</th>
-                    <th className="px-3 py-2.5">Método</th>
-                    <th className="px-3 py-2.5 text-right">Importe</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentPayments.map((payment) => (
-                    <tr key={payment.id} className="border-b border-[#F2F3EE] last:border-0">
-                      <td className="px-3 py-3 font-semibold text-[#17191C]">{payment.member_name}</td>
-                      <td className="px-3 py-3 text-[#4B5563]">{payment.plan_name}</td>
-                      <td className="tabular-nums px-3 py-3 text-[#6B7280]">{payment.paid_at}</td>
-                      <td className="px-3 py-3 text-[#4B5563]">
-                        {getPaymentMethodLabel(payment.payment_method)}
-                      </td>
-                      <td className="tabular-nums px-3 py-3 text-right font-bold text-[#17191C]">
-                        {payment.formatted_amount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PaymentsTable payments={recentPayments} />
 
             {recentPayments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#CEF542] text-[#17191C]">
-                  <Plus className="h-5 w-5" />
+              <div className="px-5 py-[24px] text-center text-[#73756e]">
+                <div
+                  className="mx-auto mb-[10px] grid h-8 w-8 place-items-center rounded-full bg-[#d3f36b] text-[18px] leading-none text-[#22251f]"
+                  aria-hidden="true"
+                >
+                  +
                 </div>
-                <p className="mt-3 text-sm font-bold text-[#17191C]">Aún no hay ingresos</p>
-                <p className="mt-1 text-xs text-[#6B7280]">Registra el primer pago para empezar.</p>
+                <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
+                  Aún no hay ingresos
+                </strong>
+                <p className="mt-1.5 mb-3.5 text-[10px]">Registra el primer pago para empezar.</p>
                 <button
                   type="button"
                   onClick={() => setPaymentModalOpen(true)}
-                  className="mt-4 rounded-lg bg-[#17191C] px-4 py-2 text-xs font-semibold text-white hover:bg-black"
+                  className="mt-[3px] inline-flex min-h-[39px] items-center justify-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
                 >
                   Registrar ingreso
                 </button>
@@ -231,64 +219,69 @@ export function DashboardPage() {
             ) : null}
           </div>
 
-          <p className="mt-2.5 px-1 text-[11px] text-[#9CA3AF]">
+          <p className="mt-[13px] text-[9px] text-[#999b93]">
             Los registros se guardan en PostgreSQL vía Laravel API.
           </p>
         </div>
 
-        <div className="lg:col-span-5">
-          <div className="flex h-full flex-col justify-between rounded-xl border border-[#E6E7E2] bg-white p-5">
-            <div>
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-                    Hoy en LOBO
-                  </p>
-                  <h3 className="text-base font-bold text-[#17191C]">Clases destacadas</h3>
-                </div>
-                <Link
-                  to="/horarios"
-                  aria-label="Ir a Horarios"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E6E7E2] text-[#4B5563] hover:bg-[#F5F5F0] hover:text-[#17191C]"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+        <article className="flex min-w-0 flex-col justify-between rounded-[3px] border border-[#e7e8e2] bg-white">
+          <div>
+            <div className="flex min-h-[72px] items-center justify-between gap-3 px-[18px] py-[14px]">
+              <div>
+                <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+                  HOY EN LOBO
+                </span>
+                <h3 className="font-display mt-1 text-[15px] leading-[1.2] font-semibold text-[#22251f]">
+                  Clases destacadas
+                </h3>
               </div>
-
-              <ul className="divide-y divide-[#F2F3EE]">
-                {featured.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-3 py-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="tabular-nums w-11 shrink-0 text-left">
-                        <span className="block text-xs font-bold text-[#17191C]">{item.time}</span>
-                        <span className="block text-[10px] font-medium text-[#9CA3AF]">
-                          {item.period}
-                        </span>
-                      </div>
-                      <span
-                        className="h-8 w-1 shrink-0 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <p className="text-sm font-bold text-[#17191C]">{item.name}</p>
-                        <p className="text-xs text-[#6B7280]">{item.meta}</p>
-                      </div>
-                    </div>
-                    <span className="tabular-nums text-xs font-semibold text-[#6B7280]">
-                      {item.ratio}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <Link
+                to="/horarios"
+                aria-label="Ir a horarios"
+                className="grid h-[31px] w-[31px] place-items-center rounded-[3px] border border-[#e8e9e3] bg-white text-[#22251f] hover:bg-[#f5f6f1]"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-[#F2F3EE] pt-3 text-[11px] text-[#9CA3AF]">
-              <span>Más movimiento, mejores días.</span>
-              <Sparkles className="h-3.5 w-3.5 text-[#84CC16]" aria-hidden="true" />
+            <div className="px-[17px]">
+              {featured.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex min-h-[62px] items-center gap-[10px] border-b border-[#eff0eb] last:border-b-0"
+                >
+                  <div className="font-display tabular-nums flex w-[39px] shrink-0 flex-col text-[11px] font-semibold text-[#22251f]">
+                    {item.time}
+                    <small className="mt-0.5 font-sans text-[8px] font-semibold text-[#9c9e96]">
+                      {item.period}
+                    </small>
+                  </div>
+                  <span
+                    className="h-[31px] w-[3px] shrink-0 rounded-[5px]"
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden="true"
+                  />
+                  <div className="grid min-w-0 gap-1">
+                    <strong className="truncate text-[10px] font-bold text-[#363932]">
+                      {item.name}
+                    </strong>
+                    <span className="text-[9px] text-[#999b93]">{item.meta}</span>
+                  </div>
+                  <span className="tabular-nums ml-auto text-[9px] whitespace-nowrap text-[#85877f]">
+                    {item.ratio}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+
+          <div className="mx-[17px] mt-[7px] flex items-center justify-between border-t border-[#eff0eb] pt-3 pb-[13px] text-[9px] text-[#898b83]">
+            <span>Más movimiento, mejores días.</span>
+            <span className="text-[16px] leading-none text-[#a1c849]" aria-hidden="true">
+              ✳
+            </span>
+          </div>
+        </article>
       </section>
 
       <RegisterPaymentModal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} />

@@ -1,40 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --bg-canvas: #f5f5f0;
-  --surface: #ffffff;
-  --surface-muted: #f9faf8;
-  --lime-brand: #cef542;
-  --lime-hover: #c1ea2c;
-  --ink-primary: #17191c;
-  --ink-secondary: #4b5563;
-  --ink-muted: #6b7280;
-  --border-subtle: #e6e7e2;
-  --coral-avatar: #f27d62;
+  --ink: #22251f;
+  --muted: #85877f;
+  --line: #e8e9e3;
+  --lime: #d3f36b;
+  --lime-hover: #c5eb50;
+  --paper: #ffffff;
+  --coral: #ff8068;
+  --blue: #a7d2ef;
+  --bg-canvas: #f3f4ef;
+}
+
+@theme {
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", sans-serif;
 }
 
 body {
   margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
   background-color: var(--bg-canvas);
-  color: var(--ink-primary);
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-.hero-gym-bg {
-  background-color: #16181a;
-  background-image:
-    linear-gradient(90deg, rgba(16, 18, 20, 0.92) 0%, rgba(16, 18, 20, 0.72) 55%, rgba(16, 18, 20, 0.55) 100%),
-    repeating-linear-gradient(
-      -35deg,
-      rgba(255, 255, 255, 0.03) 0px,
-      rgba(255, 255, 255, 0.03) 2px,
-      transparent 2px,
-      transparent 14px
-    );
+.view-appear {
+  animation: loboAppear 0.35s both;
 }
 
+@keyframes loboAppear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.live-dot-ring {
+  background-color: #80bd42;
+  box-shadow: 0 0 0 3px #eaf5dd;
+}

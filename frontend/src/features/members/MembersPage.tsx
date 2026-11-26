@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, Plus, Search, Users } from 'lucide-react';
+import { DollarSign, Search, Users } from 'lucide-react';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/http';
 import type { PaymentsListResponse } from '../../shared/api/types';
 import { KpiCard } from '../../shared/components/KpiCard';
-import { getPaymentMethodLabel } from '../../shared/utils/format';
+import { PaymentsTable } from '../billing/PaymentsTable';
 import { RegisterPaymentModal } from '../billing/RegisterPaymentModal';
 
 export function MembersPage() {
@@ -27,57 +27,59 @@ export function MembersPage() {
   const stats = paymentsQuery.data?.stats;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <div className="mt-[9px] mb-[19px] flex flex-wrap items-end justify-between gap-[18px] md:mt-3 md:mb-6">
         <div>
-          <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-            Comunidad LOBO
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17191C] sm:text-3xl">
+          <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+            COMUNIDAD LOBO
+          </span>
+          <h1 className="font-display mt-[7px] text-[25px] leading-[1.15] font-semibold text-[#22251f] sm:text-[29px]">
             Socios e ingresos
           </h1>
-          <p className="mt-1 text-xs text-[#6B7280] sm:text-sm">
-            Consulta quién entra contigo y cada pago registrado.
+          <p className="mt-[7px] max-w-[240px] text-[11px] leading-normal text-[#83857d] sm:max-w-none">
+            Consulta quién entrena contigo y cada pago registrado.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setPaymentModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#17191C] px-4 py-2.5 text-xs font-bold text-white hover:bg-black"
+          className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
         >
-          <Plus className="h-4 w-4" />
-          Registrar ingreso
+          <span className="text-[15px] leading-none">＋</span> Registrar ingreso
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-xl">
+      <div className="mb-[14px] grid grid-cols-2 gap-[12px] sm:max-w-[452px]">
         <KpiCard
           label="Socios registrados"
           value={stats?.distinct_members_count ?? 0}
           subtitle="Con al menos un registro"
-          icon={<Users className="h-4 w-4 text-rose-700" />}
-          iconBgClass="bg-rose-50"
+          icon={<Users className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
+          iconBgClass="bg-[#ffe0d8]"
         />
         <KpiCard
           label="Ingresos acumulados"
           value={stats?.formatted_total_revenue ?? '$0.00'}
           subtitle="Todos los movimientos"
-          icon={<DollarSign className="h-4 w-4 text-[#17191C]" />}
-          iconBgClass="bg-[#CEF542]"
+          icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
+          iconBgClass="bg-[#d3f36b]"
         />
       </div>
 
       <div>
-        <div className="rounded-xl border border-[#E6E7E2] bg-white p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white">
+          <div className="flex min-h-[79px] flex-wrap items-center justify-between gap-3 px-[18px] py-[14px]">
             <div>
-              <p className="text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-                Registro completo
-              </p>
-              <h2 className="text-base font-bold text-[#17191C]">Historial de pagos</h2>
+              <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
+                REGISTRO COMPLETO
+              </span>
+              <h2 className="font-display mt-1 text-[15px] leading-[1.2] font-semibold text-[#22251f]">
+                Historial de pagos
+              </h2>
             </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-[#9CA3AF]" />
+
+            <label className="flex h-[34px] w-full items-center gap-[7px] rounded-[3px] border border-[#e7e8e2] px-[10px] text-[#898b83] focus-within:border-[#97bd42] sm:w-[min(230px,48%)]">
+              <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <input
                 type="search"
                 value={search}
@@ -87,69 +89,44 @@ export function MembersPage() {
                 }}
                 placeholder="Buscar socio..."
                 aria-label="Buscar socio"
-                className="w-full rounded-lg border border-[#E6E7E2] py-2 pr-3 pl-9 text-xs text-[#17191C] outline-none focus:border-[#17191C]"
+                className="w-full min-w-0 border-0 bg-transparent text-[10px] text-[#22251f] outline-none placeholder:text-[#898b83]"
               />
-            </div>
+            </label>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-[#E6E7E2] bg-[#FAFBF9] text-[10px] font-semibold tracking-wider text-[#9CA3AF] uppercase">
-                  <th className="px-3 py-2.5">Socio</th>
-                  <th className="px-3 py-2.5">Plan</th>
-                  <th className="px-3 py-2.5">Fecha</th>
-                  <th className="px-3 py-2.5">Método</th>
-                  <th className="px-3 py-2.5 text-right">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-[#F2F3EE] last:border-0">
-                    <td className="px-3 py-3 font-semibold text-[#17191C]">{payment.member_name}</td>
-                    <td className="px-3 py-3 text-[#4B5563]">{payment.plan_name}</td>
-                    <td className="tabular-nums px-3 py-3 text-[#6B7280]">{payment.paid_at}</td>
-                    <td className="px-3 py-3 text-[#4B5563]">
-                      {getPaymentMethodLabel(payment.payment_method)}
-                    </td>
-                    <td className="tabular-nums px-3 py-3 text-right font-bold text-[#17191C]">
-                      {payment.formatted_amount}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PaymentsTable payments={payments} />
 
           {paymentsQuery.isLoading ? (
-            <p className="py-10 text-center text-xs text-[#6B7280]">Consultando historial...</p>
+            <p className="py-10 text-center text-[10px] text-[#73756e]">Consultando historial...</p>
           ) : payments.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-sm font-bold text-[#17191C]">No hay resultados</p>
-              <p className="mt-1 text-xs text-[#6B7280]">
+            <div className="px-5 py-[35px] text-center text-[#73756e]">
+              <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
+                No hay resultados
+              </strong>
+              <p className="mt-1.5 text-[10px]">
                 Prueba con otro nombre o registra un nuevo ingreso.
               </p>
             </div>
           ) : null}
 
           {meta && meta.last_page > 1 ? (
-            <div className="mt-4 flex items-center justify-between border-t border-[#E6E7E2] pt-3 text-xs">
+            <div className="flex items-center justify-between border-t border-[#e8e9e3] px-[18px] py-3 text-[10px]">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-[#E6E7E2] px-3 py-1 font-semibold disabled:opacity-40"
+                className="rounded-[3px] border border-[#e8e9e3] px-3 py-1 font-semibold text-[#22251f] disabled:opacity-40"
               >
                 Anterior
               </button>
-              <span className="tabular-nums text-[#6B7280]">
+              <span className="tabular-nums text-[#85877f]">
                 Página {meta.current_page} de {meta.last_page}
               </span>
               <button
                 type="button"
                 disabled={page >= meta.last_page}
                 onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg border border-[#E6E7E2] px-3 py-1 font-semibold disabled:opacity-40"
+                className="rounded-[3px] border border-[#e8e9e3] px-3 py-1 font-semibold text-[#22251f] disabled:opacity-40"
               >
                 Siguiente
               </button>
@@ -157,7 +134,7 @@ export function MembersPage() {
           ) : null}
         </div>
 
-        <p className="mt-2.5 px-1 text-[11px] text-[#9CA3AF]">
+        <p className="mt-[13px] text-[9px] text-[#999b93]">
           Los registros se guardan en PostgreSQL vía Laravel API.
         </p>
       </div>
