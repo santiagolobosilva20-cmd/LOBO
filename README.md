@@ -222,12 +222,13 @@ Desde la raíz (`package.json`):
 Comandos directos de verificación en `backend/`:
 
 ```bash
-composer --working-dir=backend run lint
-composer --working-dir=backend run analyse
-php backend/artisan test --testsuite=Architecture
-php backend/artisan test --testsuite=Unit
-php backend/artisan test --testsuite=Feature
-php backend/artisan test --coverage
+cd backend
+composer run lint
+composer run analyse
+php artisan test --testsuite=Architecture
+php artisan test --testsuite=Unit
+php artisan test --testsuite=Feature
+php artisan test --coverage
 ```
 
 ---
