@@ -1,1 +1,28 @@
+# Dependencies & Build Artifacts
 /node_modules
+/frontend/node_modules
+/frontend/dist
+/backend/vendor
+/backend/node_modules
+/backend/public/build
+/backend/public/hot
+/backend/public/storage
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+/backend/storage/*.key
+
+# Caches & Logs
+*.log
+/backend/.phpunit.cache
+/backend/.phpunit.result.cache
+/backend/storage/pail
+.DS_Store
+
+# Local Agent Memory (strictly local, never commit)
+**/*README.agent.md
