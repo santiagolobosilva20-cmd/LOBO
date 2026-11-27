@@ -6,7 +6,7 @@ Plataforma web para la administración operativa de un gimnasio (**LOBO — Club
 
 ## Arquitectura y flujo de datos
 
-El backend organiza el dominio en 6 contextos acotados independientes bajo `backend/modules/<Modulo>` (`Shared`, `Members`, `Plans`, `Billing`, `Scheduling`, `Dashboard`). Cada módulo separa estrictamente `Presentation -> Application -> Domain <- Infrastructure`. Ningún módulo importa modelos Eloquent, repositorios o lógica interna de sus pares; la colaboración entre contextos ocurre únicamente mediante interfaces en `Contracts/` y eventos de dominio, verificada automáticamente en `ModularBoundariesTest.php`.
+El backend organiza el dominio en 9 contextos acotados independientes bajo `backend/modules/<Modulo>` (`Shared`, `Members`, `Plans`, `Billing`, `Memberships`, `Scheduling`, `Training`, `Nutrition`, `Dashboard`). Cada módulo separa estrictamente `Presentation -> Application -> Domain <- Infrastructure`. Ningún módulo importa modelos Eloquent, repositorios o lógica interna de sus pares; la colaboración entre contextos ocurre únicamente mediante interfaces en `Contracts/` y eventos de dominio (`PaymentRecorded`), verificada automáticamente en `ModularBoundariesTest.php`.
 
 ```mermaid
 flowchart LR
@@ -14,19 +14,31 @@ flowchart LR
     Gateway --> Dash["Dashboard (Resumen BFF)"]
     Gateway --> Mem["Members (Socios)"]
     Gateway --> Pln["Plans (Planes y precios)"]
-    Gateway --> Bil["Billing (Ingresos / Pagos)"]
-    Gateway --> Sch["Scheduling (Horarios / Entrenamientos)"]
+    Gateway --> Bil["Billing (Pagos)"]
+    Gateway --> Msh["Memberships (Membresías)"]
+    Gateway --> Sch["Scheduling (Horarios / Disciplinas)"]
+    Gateway --> Trn["Training (Rutinas / Bitácora)"]
+    Gateway --> Nut["Nutrition (Alimentación)"]
 
     Dash -.->|"Contracts"| Mem
     Dash -.->|"Contracts"| Bil
+    Dash -.->|"Contracts"| Msh
     Dash -.->|"Contracts"| Sch
     Bil -.->|"Contracts"| Mem
     Bil -.->|"Contracts"| Pln
+    Bil -.->|"PaymentRecorded"| Msh
+    Msh -.->|"Contracts"| Mem
+    Msh -.->|"Contracts"| Pln
+    Trn -.->|"Contracts"| Mem
+    Nut -.->|"Contracts"| Mem
 
-    Mem --> DB[("PostgreSQL 18")]
+    Mem --> DB[("Neon PostgreSQL 18")]
     Pln --> DB
     Bil --> DB
+    Msh --> DB
     Sch --> DB
+    Trn --> DB
+    Nut --> DB
 ```
 
 ### Reglas de fronteras modulares verificadas (`ModularBoundariesTest.php`)
@@ -34,7 +46,9 @@ flowchart LR
 - `Shared` no depende de ningún módulo de dominio.
 - `Members`, `Plans` y `Scheduling` no dependen de ningún otro módulo de negocio.
 - `Billing` consume únicamente `Contracts\` de `Members` y `Plans` (nunca `Domain\`, `Application\`, `Infrastructure\` ni `Presentation\`).
-- `Dashboard` consume únicamente `Contracts\` de `Members`, `Billing` y `Scheduling`.
+- `Memberships` consume únicamente `Contracts\` de `Members`, `Plans` y `Billing`.
+- `Training` y `Nutrition` consumen únicamente `Contracts\` de `Members`.
+- `Dashboard` consume únicamente `Contracts\` de `Members`, `Billing`, `Memberships` y `Scheduling`.
 - Los controladores no acceden a `DB::` ni a modelos Eloquent directamente; delegan en `Application\Services` y `FormRequest::toDto()`.
 
 ---
@@ -67,15 +81,18 @@ flowchart LR
 │   │   ├── Members/                  # Socios (CRUD, email opcional, findOrCreateByName, conteo activos)
 │   │   ├── Plans/                    # Planes y precios (tagline, features, is_featured, precios en centavos)
 │   │   ├── Billing/                  # Ingresos por socio (pagos transaccionales, snapshots históricos, PaymentRecorded)
-│   │   ├── Scheduling/               # Entrenamientos (4 disciplinas con badge/imagen) y Horarios (Lun-Sáb, lockForUpdate)
+│   │   ├── Memberships/              # Membresías con vigencia (alta/renovación/pausa/cancelación y activación por pago)
+│   │   ├── Scheduling/               # Entrenamientos (disciplinas con badge/imagen) y Horarios (Lun-Sáb, lockForUpdate)
+│   │   ├── Training/                 # Rutinas con ejercicios por día y bitácora de sesiones completadas (workout_logs)
+│   │   ├── Nutrition/                # Planes alimenticios, metas calóricas/macros y comidas por tiempo diario
 │   │   └── Dashboard/                # Read model BFF (/api/v1/dashboard/summary)
 │   └── tests/Architecture/           # Reglas ejecutables Pest Arch
 ├── frontend/                         # SPA React 19 + TypeScript + Tailwind CSS v4
 │   ├── public/images/                # Recursos fotográficos locales (hero y 4 entrenamientos)
 │   └── src/
 │       ├── app/                      # Enrutador, QueryClient y AppShell (sidebar LOBO + topbar + alerta DB)
-│       ├── features/                 # dashboard, billing (modal Caja LOBO y PaymentsTable), members, schedule, plans, workouts
-│       ├── shared/                   # Cliente HTTP tipado, KpiCard, ToastContext y formateadores MXN/fechas
+│       ├── features/                 # dashboard, billing, members (membresías/socios), schedule, plans, routines, workouts, nutrition
+│       ├── shared/                   # Cliente HTTP tipado, KpiCard, AssignMemberModal, ToastContext y formateadores MXN/fechas
 │       └── tests/                    # Pruebas Vitest + Testing Library
 ├── .env.example                      # Plantilla raíz sincronizada de variables de entorno
 ├── LICENSE                           # Licencia MIT
@@ -200,11 +217,18 @@ Todos los endpoints residen bajo `/api/v1` y devuelven respuestas JSON tipadas (
 | `GET/POST` | `/api/v1/plans` | `Plans` | Catálogo de planes (`tagline`, `features`, `is_featured`) | `{"name":"Mensualidad","price_cents":89000,"duration_days":30}` | `200`, `201`, `422`, `409` |
 | `GET/PATCH/DELETE` | `/api/v1/plans/{planId}` | `Plans` | Consulta, edición/activación y borrado | Campos opcionales de plan | `200`, `204`, `404`, `409` |
 | `GET` | `/api/v1/payments` | `Billing` | Historial paginado más `stats` globales acumulados | `?search=&method=&month=YYYY-MM` | `200` |
-| `POST` | `/api/v1/payments` | `Billing` | Registra ingreso por `member_id` o `member_name` (alta implícita) | `{"member_name":"Alex Rivera","plan_id":2,"payment_method":"cash"}` | `201`, `422`, `404`, `409` |
+| `POST` | `/api/v1/payments` | `Billing` | Registra ingreso y activa/extiende membresía (`PaymentRecorded`) | `{"member_name":"Alex Rivera","plan_id":2,"payment_method":"cash"}` | `201`, `422`, `404`, `409` |
 | `DELETE` | `/api/v1/payments/{paymentId}` | `Billing` | Elimina un registro de ingreso | N/A | `204`, `404` |
-| `GET/POST/DELETE` | `/api/v1/workouts` | `Scheduling` | Catálogo de disciplinas (`badge_label`, `image_url`, `display_order`) | `{"name":"Fuerza funcional","category":"FUERZA"}` | `200`, `201`, `204`, `422`, `409` |
+| `GET/POST` | `/api/v1/memberships` | `Memberships` | Listado filtrado (`status`, `expiring_soon`), stats y alta manual | `{"member_name":"Alex Rivera","plan_id":2}` | `200`, `201`, `422`, `404` |
+| `POST` | `/api/v1/memberships/{id}/{renew\|pause\|resume\|cancel}` | `Memberships` | Transiciones de vigencia y ciclo de vida | `{"plan_id":2}` (opcional en `renew`) | `200`, `404`, `409` |
+| `GET/POST/PATCH/DELETE` | `/api/v1/workouts` | `Scheduling` | Catálogo de disciplinas (`badge_label`, `image_url`, `display_order`) | `{"name":"Fuerza funcional","category":"FUERZA"}` | `200`, `201`, `204`, `422`, `409` |
 | `GET/POST/DELETE` | `/api/v1/schedule/sessions` | `Scheduling` | Sesiones por día (`day_of_week` 1..6), sala, hora y cupo | `{"workout_id":1,"day_of_week":1,"room":"Sala Norte",...}` | `200`, `201`, `204`, `422`, `404` |
 | `POST` | `/api/v1/schedule/sessions/{sessionId}/enroll` | `Scheduling` | Reserva atómica de cupo con bloqueo `lockForUpdate` | N/A | `200`, `404`, `409` |
+| `GET/POST/PATCH/DELETE` | `/api/v1/routines` | `Training` | Rutinas con ejercicios por día, series, reps, carga y descanso | `{"title":"Fuerza 4D","goal":"strength","exercises":[...]}` | `200`, `201`, `204`, `422`, `404` |
+| `POST` | `/api/v1/routines/{routineId}/assign` | `Training` | Clona rutina plantilla para un socio específico | `{"member_name":"Alex Rivera"}` | `201`, `422`, `404` |
+| `GET/POST/DELETE` | `/api/v1/workout-logs` | `Training` | Bitácora de entrenamientos realizados (duración, RPE, kcal) | `{"member_name":"Alex Rivera","title":"Fuerza","duration_minutes":45}` | `200`, `201`, `204`, `422` |
+| `GET/POST/PATCH/DELETE` | `/api/v1/nutrition/plans` | `Nutrition` | Planes alimenticios (kcal, macros P/C/G, agua y comidas diarias) | `{"title":"Definición","goal":"fat_loss","daily_calories":1900,"meals":[...]}` | `200`, `201`, `204`, `422` |
+| `POST` | `/api/v1/nutrition/plans/{planId}/assign` | `Nutrition` | Clona plan nutricional plantilla para un socio específico | `{"member_name":"Alex Rivera"}` | `201`, `422`, `404` |
 
 ---
 

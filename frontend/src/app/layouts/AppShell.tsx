@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  Apple,
   Clock,
   CreditCard,
+  Dumbbell,
   Home,
   Menu,
   MoreHorizontal,
@@ -29,15 +31,19 @@ const NAV_ITEMS = [
   { to: '/socios', label: 'Socios', icon: Users },
   { to: '/horarios', label: 'Horarios', icon: Clock },
   { to: '/planes', label: 'Planes y precios', icon: CreditCard },
+  { to: '/rutinas', label: 'Rutinas', icon: Dumbbell },
   { to: '/entrenamientos', label: 'Entrenamientos', icon: TrendingUp },
+  { to: '/alimentacion', label: 'Alimentación', icon: Apple },
 ];
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Resumen',
-  '/socios': 'Socios',
+  '/socios': 'Socios y membresías',
   '/horarios': 'Horarios',
   '/planes': 'Planes y precios',
+  '/rutinas': 'Rutinas',
   '/entrenamientos': 'Entrenamientos',
+  '/alimentacion': 'Alimentación',
 };
 
 export function AppShell({ clubStatus, children }: AppShellProps) {
@@ -95,11 +101,11 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
         </button>
       </div>
 
-      <div className="mx-[10px] mt-[47px] mb-[12px] text-[9px] font-bold tracking-[0.02em] text-[#9c9e96] uppercase">
+      <div className="mx-[10px] mt-[38px] mb-[12px] text-[9px] font-bold tracking-[0.02em] text-[#9c9e96] uppercase">
         MENÚ PRINCIPAL
       </div>
 
-      <nav className="grid gap-[5px]" aria-label="Navegación principal">
+      <nav className="grid gap-[4px]" aria-label="Navegación principal">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -107,7 +113,7 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
             end={to === '/'}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
-              `flex min-h-[43px] w-full items-center gap-[12px] rounded-[3px] px-[12px] text-left text-[12px] font-semibold transition-colors ${
+              `flex min-h-[41px] w-full items-center gap-[12px] rounded-[3px] px-[12px] text-left text-[12px] font-semibold transition-colors ${
                 isActive
                   ? 'bg-[#d3f36b] text-[#22251f]'
                   : 'text-[#686b63] hover:bg-[#f5f6f1] hover:text-[#22251f]'

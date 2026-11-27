@@ -1,4 +1,12 @@
-import type { MemberStatus, PaymentMethod, WorkoutLevel } from '../api/types';
+import type {
+  MealSlot,
+  MembershipStatus,
+  MemberStatus,
+  NutritionGoal,
+  PaymentMethod,
+  RoutineGoal,
+  WorkoutLevel,
+} from '../api/types';
 
 export function formatCurrencyFromCents(cents: number): string {
   const safeCents = Number.isFinite(cents) ? cents : 0;
@@ -41,6 +49,17 @@ export function getMemberStatusLabel(status: MemberStatus): string {
   return MEMBER_STATUS_LABELS[status] ?? status;
 }
 
+const MEMBERSHIP_STATUS_LABELS: Record<MembershipStatus, string> = {
+  active: 'Activa',
+  paused: 'Pausada',
+  expired: 'Vencida',
+  cancelled: 'Cancelada',
+};
+
+export function getMembershipStatusLabel(status: MembershipStatus): string {
+  return MEMBERSHIP_STATUS_LABELS[status] ?? status;
+}
+
 const WORKOUT_LEVEL_LABELS: Record<WorkoutLevel, string> = {
   all_levels: 'Todos los niveles',
   beginner: 'Inicial',
@@ -63,3 +82,37 @@ export function getWorkoutLevelLabel(level: WorkoutLevel): string {
   return WORKOUT_LEVEL_LABELS[level] ?? level;
 }
 
+const ROUTINE_GOAL_LABELS: Record<RoutineGoal, string> = {
+  strength: 'Fuerza',
+  hypertrophy: 'Hipertrofia',
+  fat_loss: 'Definición',
+  endurance: 'Resistencia',
+  mobility: 'Movilidad',
+};
+
+export function getRoutineGoalLabel(goal: RoutineGoal): string {
+  return ROUTINE_GOAL_LABELS[goal] ?? goal;
+}
+
+const NUTRITION_GOAL_LABELS: Record<NutritionGoal, string> = {
+  fat_loss: 'Déficit',
+  maintenance: 'Mantenimiento',
+  muscle_gain: 'Volumen',
+  performance: 'Rendimiento',
+};
+
+export function getNutritionGoalLabel(goal: NutritionGoal): string {
+  return NUTRITION_GOAL_LABELS[goal] ?? goal;
+}
+
+const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
+  breakfast: 'Desayuno',
+  mid_morning: 'Media mañana',
+  lunch: 'Almuerzo',
+  snack: 'Merienda',
+  dinner: 'Cena',
+};
+
+export function getMealSlotLabel(slot: MealSlot): string {
+  return MEAL_SLOT_LABELS[slot] ?? slot;
+}

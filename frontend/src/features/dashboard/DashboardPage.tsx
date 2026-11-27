@@ -143,7 +143,11 @@ export function DashboardPage() {
         <KpiCard
           label="Socios activos"
           value={kpis?.active_members_count ?? 0}
-          subtitle="Personas en tu comunidad"
+          subtitle={
+            (kpis?.active_memberships_count ?? 0) > 0
+              ? `${kpis?.active_memberships_count} membresías vigentes`
+              : 'Personas en tu comunidad'
+          }
           icon={<Users className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
           iconBgClass="bg-[#ffe0d8]"
         />

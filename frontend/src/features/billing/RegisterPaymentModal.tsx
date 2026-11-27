@@ -83,6 +83,7 @@ export function RegisterPaymentModal({
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['payments'] }),
         queryClient.invalidateQueries({ queryKey: ['members'] }),
+        queryClient.invalidateQueries({ queryKey: ['memberships'] }),
       ]);
       showToast(
         `Ingreso de ${res.data.formatted_amount} registrado para ${res.data.member_name}.`,
