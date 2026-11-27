@@ -12,5 +12,7 @@ interface MemberLookupInterface
 
     public function findOrCreateByName(string $fullName): MemberSummaryData;
 
+    public function findOrCreateByEmailAndName(string $email, string $fullName): MemberSummaryData;
+
     public function countActive(): int;
 }

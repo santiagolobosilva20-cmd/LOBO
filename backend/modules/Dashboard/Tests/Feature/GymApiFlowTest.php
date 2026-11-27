@@ -3,10 +3,25 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Auth\Application\Services\AuthService;
+use Modules\Auth\Domain\Enums\UserRole;
+use Modules\Auth\Domain\Models\AccountUser;
+use Modules\Auth\Domain\Repositories\AuthRepositoryInterface;
 
 uses(RefreshDatabase::class);
 
-it('runs full gym workflow registering payment by member name and updating dashboard kpis', function (): void {
+it('runs full gym workflow with memberships, routines, workout logs and nutrition plans', function (): void {
+    $admin = app(AuthRepositoryInterface::class)->saveUser(new AccountUser([
+        'name' => 'Admin Test',
+        'email' => 'admin.flow@loboclub.com',
+        'role' => UserRole::Admin,
+        'member_id' => null,
+        'password' => 'test-pass-1234',
+    ]));
+    $token = app(AuthService::class)->issueTokenForUser($admin, 'test');
+
+    $this->withToken($token);
+
     $planId = $this->postJson('/api/v1/plans', [
         'name' => 'Mensualidad',
         'tagline' => '02 / FAVORITO LOBO',
@@ -17,7 +32,7 @@ it('runs full gym workflow registering payment by member name and updating dashb
         'is_featured' => true,
     ])->assertCreated()->json('data.id');
 
-    $this->postJson('/api/v1/payments', [
+    $paymentResponse = $this->postJson('/api/v1/payments', [
         'member_name' => 'Alex Rivera',
         'plan_id' => $planId,
         'payment_method' => 'cash',
@@ -26,12 +41,97 @@ it('runs full gym workflow registering payment by member name and updating dashb
         ->assertJsonPath('data.member_name', 'Alex Rivera')
         ->assertJsonPath('data.formatted_amount', '$890.00');
 
+    $memberId = $paymentResponse->json('data.member_id');
+
+    $membershipsResponse = $this->getJson('/api/v1/memberships')
+        ->assertOk()
+        ->assertJsonPath('stats.active_count', 1)
+        ->assertJsonPath('data.0.member_name', 'Alex Rivera')
+        ->assertJsonPath('data.0.status', 'active');
+
+    $membershipId = $membershipsResponse->json('data.0.id');
+
+    $this->postJson("/api/v1/memberships/{$membershipId}/pause")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'paused');
+
+    $this->postJson("/api/v1/memberships/{$membershipId}/resume")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'active');
+
+    $routineId = $this->postJson('/api/v1/routines', [
+        'title' => 'Fuerza Base 4D',
+        'goal' => 'strength',
+        'level' => 'intermediate',
+        'days_per_week' => 4,
+        'estimated_minutes' => 55,
+        'is_template' => true,
+        'exercises' => [
+            [
+                'day_label' => 'Día 1 · Tren inferior',
+                'exercise_name' => 'Sentadilla trasera',
+                'sets' => 4,
+                'reps' => '6-8',
+                'target_weight' => '80 kg',
+                'rest_seconds' => 120,
+            ],
+        ],
+    ])->assertCreated()->json('data.id');
+
+    $assignedRoutineId = $this->postJson("/api/v1/routines/{$routineId}/assign", [
+        'member_id' => $memberId,
+    ])->assertCreated()
+        ->assertJsonPath('data.member_name', 'Alex Rivera')
+        ->assertJsonPath('data.is_template', false)
+        ->json('data.id');
+
     $workoutId = $this->postJson('/api/v1/workouts', [
         'name' => 'Fuerza funcional',
         'category' => 'FUERZA',
         'default_duration_minutes' => 45,
         'badge_label' => 'TODOS LOS NIVELES',
     ])->assertCreated()->json('data.id');
+
+    $this->postJson('/api/v1/workout-logs', [
+        'member_id' => $memberId,
+        'workout_id' => $workoutId,
+        'routine_id' => $assignedRoutineId,
+        'title' => 'Sesión Día 1 · Sentadilla',
+        'category' => 'FUERZA',
+        'duration_minutes' => 50,
+        'effort_rpe' => 8,
+        'calories_estimate' => 420,
+    ])->assertCreated()
+        ->assertJsonPath('data.member_name', 'Alex Rivera')
+        ->assertJsonPath('data.effort_rpe', 8);
+
+    $nutritionId = $this->postJson('/api/v1/nutrition/plans', [
+        'title' => 'Mantenimiento Atlético',
+        'goal' => 'maintenance',
+        'daily_calories' => 2400,
+        'protein_grams' => 165,
+        'carbs_grams' => 260,
+        'fats_grams' => 75,
+        'water_liters' => 3.0,
+        'is_template' => true,
+        'meals' => [
+            [
+                'meal_slot' => 'breakfast',
+                'title' => 'Avena proteica y huevos',
+                'foods_summary' => '3 huevos, 60 g avena, frutos rojos',
+                'calories' => 540,
+                'protein_grams' => 36,
+                'carbs_grams' => 52,
+                'fats_grams' => 19,
+            ],
+        ],
+    ])->assertCreated()->json('data.id');
+
+    $this->postJson("/api/v1/nutrition/plans/{$nutritionId}/assign", [
+        'member_id' => $memberId,
+    ])->assertCreated()
+        ->assertJsonPath('data.member_name', 'Alex Rivera')
+        ->assertJsonPath('data.daily_calories', 2400);
 
     $sessionId = $this->postJson('/api/v1/schedule/sessions', [
         'workout_id' => $workoutId,
@@ -52,6 +152,7 @@ it('runs full gym workflow registering payment by member name and updating dashb
         ->assertOk()
         ->assertJsonPath('data.kpis.formatted_monthly_revenue', '$890.00')
         ->assertJsonPath('data.kpis.active_members_count', 1)
+        ->assertJsonPath('data.kpis.active_memberships_count', 1)
         ->assertJsonPath('data.kpis.monthly_payments_count', 1)
         ->assertJsonPath('data.recent_payments.0.member_name', 'Alex Rivera')
         ->assertJsonPath('data.featured_sessions.0.workout_name', 'Fuerza funcional');

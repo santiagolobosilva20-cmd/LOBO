@@ -12,6 +12,7 @@ use Modules\Scheduling\Domain\Enums\SessionStatus;
 use Modules\Scheduling\Presentation\Http\Requests\StoreClassSessionRequest;
 use Modules\Scheduling\Presentation\Http\Resources\ClassSessionResource;
 use Modules\Shared\Application\DTOs\PaginationQuery;
+use Modules\Shared\Presentation\Http\Requests\RequestActorResolver;
 use Modules\Shared\Presentation\Http\Responses\PaginatedJsonResponse;
 
 final readonly class ClassSessionController
@@ -59,5 +60,51 @@ final readonly class ClassSessionController
         $this->scheduleService->delete($sessionId);
 
         return response()->json(status: 204);
+    }
+
+    public function memberIndex(Request $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $page = max(1, $request->integer('page', 1));
+        $perPage = max(1, min(100, $request->integer('per_page', 30)));
+        $statusParam = $request->string('status')->toString();
+
+        $result = $this->scheduleService->list(
+            pagination: new PaginationQuery($page, $perPage),
+            status: $statusParam !== '' ? SessionStatus::tryFrom($statusParam) : null,
+        );
+
+        return response()->json([
+            'data' => ClassSessionResource::collection($result->items)->resolve($request),
+            'meta' => [
+                'current_page' => $result->currentPage,
+                'per_page' => $result->perPage,
+                'total' => $result->total,
+                'last_page' => $result->lastPage,
+            ],
+            'booked_session_ids' => $this->scheduleService->listBookedSessionIdsForMember($memberId),
+        ]);
+    }
+
+    public function memberBook(Request $request, int $sessionId): JsonResponse
+    {
+        $actor = RequestActorResolver::requireActor($request);
+        $memberId = RequestActorResolver::requireMemberId($request);
+
+        $session = $this->scheduleService->bookForMember(
+            sessionId: $sessionId,
+            memberId: $memberId,
+            memberName: $actor->memberName ?? $actor->name,
+        );
+
+        return (new ClassSessionResource($session))->response();
+    }
+
+    public function memberCancelBooking(Request $request, int $sessionId): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $session = $this->scheduleService->cancelForMember($sessionId, $memberId);
+
+        return (new ClassSessionResource($session))->response();
     }
 }

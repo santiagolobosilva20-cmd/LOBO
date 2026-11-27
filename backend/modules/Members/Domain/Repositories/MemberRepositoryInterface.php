@@ -22,6 +22,8 @@ interface MemberRepositoryInterface
 
     public function findById(int $id): ?Member;
 
+    public function findByEmail(string $email): ?Member;
+
     public function findByNormalizedName(string $fullName): ?Member;
 
     public function existsByEmail(string $email, ?int $excludeId = null): bool;

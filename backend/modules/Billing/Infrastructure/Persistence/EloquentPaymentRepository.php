@@ -7,6 +7,7 @@ namespace Modules\Billing\Infrastructure\Persistence;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Billing\Domain\Enums\PaymentMethod;
+use Modules\Billing\Domain\Enums\PaymentStatus;
 use Modules\Billing\Domain\Models\Payment;
 use Modules\Billing\Domain\Repositories\PaymentRepositoryInterface;
 use Modules\Shared\Application\DTOs\PaginatedResult;
@@ -22,6 +23,7 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
         'plan_name_snapshot',
         'amount_cents',
         'payment_method',
+        'status',
         'paid_at',
         'notes',
         'created_at',
@@ -33,6 +35,8 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
         ?string $search = null,
         ?PaymentMethod $method = null,
         ?CarbonImmutable $month = null,
+        ?int $memberId = null,
+        ?PaymentStatus $status = null,
     ): PaginatedResult {
         $builder = Payment::query()->select(self::COLUMNS);
 
@@ -46,6 +50,14 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
 
         if ($method !== null) {
             $builder->where('payment_method', $method->value);
+        }
+
+        if ($memberId !== null) {
+            $builder->where('member_id', $memberId);
+        }
+
+        if ($status !== null) {
+            $builder->where('status', $status->value);
         }
 
         if ($month !== null) {
@@ -71,6 +83,7 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
         /** @var list<Payment> $items */
         $items = Payment::query()
             ->select(self::COLUMNS)
+            ->where('status', PaymentStatus::Paid->value)
             ->orderByDesc('paid_at')
             ->orderByDesc('id')
             ->limit($limit)
@@ -83,6 +96,7 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
     public function getMonthlyAggregate(CarbonImmutable $month): array
     {
         $row = Payment::query()
+            ->where('status', PaymentStatus::Paid->value)
             ->whereBetween('paid_at', [
                 $month->startOfMonth()->toDateString(),
                 $month->endOfMonth()->toDateString(),
@@ -99,6 +113,7 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
     public function getAllTimeAggregate(): array
     {
         $row = Payment::query()
+            ->where('status', PaymentStatus::Paid->value)
             ->selectRaw('COALESCE(SUM(amount_cents), 0) AS revenue_cents, COUNT(DISTINCT member_id) AS distinct_members, COUNT(*) AS payments_count')
             ->first();
 
@@ -107,6 +122,13 @@ final class EloquentPaymentRepository implements PaymentRepositoryInterface
             'distinct_members' => (int) ($row?->getAttribute('distinct_members') ?? 0),
             'count' => (int) ($row?->getAttribute('payments_count') ?? 0),
         ];
+    }
+
+    public function countPending(): int
+    {
+        return Payment::query()
+            ->where('status', PaymentStatus::Pending->value)
+            ->count();
     }
 
     public function findById(int $id): ?Payment

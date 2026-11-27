@@ -9,6 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Billing\Application\DTOs\ListPaymentsFilterData;
 use Modules\Billing\Domain\Enums\PaymentMethod;
+use Modules\Billing\Domain\Enums\PaymentStatus;
 use Modules\Shared\Application\DTOs\PaginationQuery;
 
 final class ListPaymentsRequest extends FormRequest
@@ -28,13 +29,14 @@ final class ListPaymentsRequest extends FormRequest
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'search' => ['sometimes', 'nullable', 'string', 'max:120'],
             'method' => ['sometimes', 'nullable', 'string', Rule::in(PaymentMethod::values())],
+            'status' => ['sometimes', 'nullable', 'string', Rule::in(PaymentStatus::values())],
             'month' => ['sometimes', 'nullable', 'date_format:Y-m'],
         ];
     }
 
     public function toDto(): ListPaymentsFilterData
     {
-        /** @var array{page?: int|string, per_page?: int|string, search?: string|null, method?: string|null, month?: string|null} $validated */
+        /** @var array{page?: int|string, per_page?: int|string, search?: string|null, method?: string|null, status?: string|null, month?: string|null} $validated */
         $validated = $this->validated();
 
         return new ListPaymentsFilterData(
@@ -48,6 +50,9 @@ final class ListPaymentsRequest extends FormRequest
                 : null,
             month: isset($validated['month']) && $validated['month'] !== ''
                 ? CarbonImmutable::createFromFormat('Y-m', $validated['month'])?->startOfMonth()
+                : null,
+            status: isset($validated['status']) && $validated['status'] !== ''
+                ? PaymentStatus::from($validated['status'])
                 : null,
         );
     }

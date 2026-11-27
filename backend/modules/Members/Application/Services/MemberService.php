@@ -88,6 +88,37 @@ final readonly class MemberService implements MemberLookupInterface
         });
     }
 
+    public function findOrCreateByEmailAndName(string $email, string $fullName): MemberSummaryData
+    {
+        $normalizedEmail = mb_strtolower(trim($email));
+        $normalizedName = $this->normalizeName($fullName);
+
+        return DB::transaction(function () use ($normalizedEmail, $normalizedName): MemberSummaryData {
+            $byEmail = $this->members->findByEmail($normalizedEmail);
+            if ($byEmail !== null) {
+                return $this->toSummary($byEmail);
+            }
+
+            $byName = $this->members->findByNormalizedName($normalizedName);
+            if ($byName !== null && $byName->email === null) {
+                $byName->email = $normalizedEmail;
+
+                return $this->toSummary($this->members->save($byName));
+            }
+
+            $member = new Member([
+                'full_name' => $normalizedName,
+                'email' => $normalizedEmail,
+                'phone' => null,
+                'document_number' => null,
+                'status' => MemberStatus::Active,
+                'joined_at' => now()->toDateString(),
+            ]);
+
+            return $this->toSummary($this->members->save($member));
+        });
+    }
+
     public function countActive(): int
     {
         return $this->members->countActive();

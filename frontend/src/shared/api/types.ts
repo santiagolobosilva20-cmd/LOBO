@@ -10,15 +10,47 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
+export type UserRole = 'admin' | 'member';
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  member_id: number | null;
+  member_name: string | null;
+}
+
+export interface AuthSessionPayload {
+  token: string;
+  user: AuthUser;
+}
+
+export interface AuthConfigStatus {
+  demo_login_enabled: boolean;
+}
+
 export interface BillingStatsMeta {
   total_revenue_cents: number;
   formatted_total_revenue: string;
   distinct_members_count: number;
   total_payments_count: number;
+  pending_count?: number;
 }
 
 export interface PaymentsListResponse extends PaginatedResponse<PaymentItem> {
   stats: BillingStatsMeta;
+}
+
+export interface MembershipStatsMeta {
+  active_count: number;
+  expiring_soon_count: number;
+  paused_count: number;
+  expired_count: number;
+}
+
+export interface MembershipsListResponse extends PaginatedResponse<MembershipItem> {
+  stats: MembershipStatsMeta;
 }
 
 export interface SingleResponse<T> {
@@ -63,6 +95,7 @@ export interface PlanItem {
 }
 
 export type PaymentMethod = 'cash' | 'card' | 'transfer';
+export type PaymentStatus = 'paid' | 'pending' | 'rejected';
 
 export interface PaymentItem {
   id: number;
@@ -73,8 +106,36 @@ export interface PaymentItem {
   amount_cents: number;
   formatted_amount: string;
   payment_method: PaymentMethod;
+  status?: PaymentStatus;
   paid_at: string;
   notes?: string | null;
+}
+
+export interface MemberMembershipsResponse extends PaginatedResponse<MembershipItem> {
+  active_membership: MembershipItem | null;
+}
+
+export interface MemberScheduleResponse extends PaginatedResponse<ClassSessionItem> {
+  booked_session_ids: number[];
+}
+
+export type MembershipStatus = 'active' | 'paused' | 'expired' | 'cancelled';
+
+export interface MembershipItem {
+  id: number;
+  member_id: number;
+  member_name: string;
+  plan_id: number;
+  plan_name: string;
+  last_payment_id: number | null;
+  starts_at: string;
+  ends_at: string;
+  days_remaining: number;
+  is_expiring_soon: boolean;
+  status: MembershipStatus;
+  auto_renew: boolean;
+  notes: string | null;
+  created_at: string | null;
 }
 
 export type WorkoutLevel = 'all_levels' | 'beginner' | 'intermediate' | 'advanced';
@@ -114,11 +175,89 @@ export interface ClassSessionItem {
   status: SessionStatus;
 }
 
+export type RoutineGoal = 'strength' | 'hypertrophy' | 'fat_loss' | 'endurance' | 'mobility';
+
+export interface RoutineExerciseItem {
+  id: number;
+  day_label: string;
+  exercise_name: string;
+  sets: number;
+  reps: string;
+  target_weight: string | null;
+  rest_seconds: number;
+  sort_order: number;
+}
+
+export interface RoutineItem {
+  id: number;
+  member_id: number | null;
+  member_name: string | null;
+  title: string;
+  goal: RoutineGoal;
+  level: WorkoutLevel;
+  days_per_week: number;
+  estimated_minutes: number;
+  is_template: boolean;
+  notes: string | null;
+  exercises: RoutineExerciseItem[];
+  created_at: string | null;
+}
+
+export interface WorkoutLogItem {
+  id: number;
+  member_id: number;
+  member_name: string;
+  workout_id: number | null;
+  routine_id: number | null;
+  title: string;
+  category: string;
+  performed_at: string;
+  duration_minutes: number;
+  effort_rpe: number;
+  calories_estimate: number | null;
+  notes: string | null;
+  created_at: string | null;
+}
+
+export type NutritionGoal = 'fat_loss' | 'maintenance' | 'muscle_gain' | 'performance';
+export type MealSlot = 'breakfast' | 'mid_morning' | 'lunch' | 'snack' | 'dinner';
+
+export interface MealEntryItem {
+  id: number;
+  meal_slot: MealSlot;
+  title: string;
+  foods_summary: string;
+  calories: number;
+  protein_grams: number;
+  carbs_grams: number;
+  fats_grams: number;
+  sort_order: number;
+}
+
+export interface NutritionPlanItem {
+  id: number;
+  member_id: number | null;
+  member_name: string | null;
+  title: string;
+  goal: NutritionGoal;
+  daily_calories: number;
+  protein_grams: number;
+  carbs_grams: number;
+  fats_grams: number;
+  water_liters: number;
+  is_template: boolean;
+  notes: string | null;
+  meals: MealEntryItem[];
+  created_at: string | null;
+}
+
 export interface DashboardSummary {
   kpis: {
     monthly_revenue_cents: number;
     formatted_monthly_revenue: string;
     active_members_count: number;
+    active_memberships_count?: number;
+    expiring_memberships_count?: number;
     monthly_payments_count: number;
     next_session: ClassSessionItem | null;
   };

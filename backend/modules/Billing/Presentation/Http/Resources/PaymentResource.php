@@ -30,6 +30,7 @@ final class PaymentResource extends JsonResource
             'amount_cents' => $payment->amountCents,
             'formatted_amount' => $payment->formattedAmount,
             'payment_method' => $payment->paymentMethod,
+            'status' => $payment->status,
             'paid_at' => $payment->paidAt,
             'notes' => $payment->notes,
             'created_at' => $payment->createdAt,

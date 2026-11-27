@@ -28,6 +28,8 @@ final class DashboardSummaryResource extends JsonResource
                 'monthly_revenue_cents' => $summary->billing->monthlyRevenueCents,
                 'formatted_monthly_revenue' => $summary->billing->formattedMonthlyRevenue,
                 'active_members_count' => $summary->activeMembersCount,
+                'active_memberships_count' => $summary->membershipStats->activeCount,
+                'expiring_memberships_count' => $summary->membershipStats->expiringSoonCount,
                 'monthly_payments_count' => $summary->billing->monthlyPaymentsCount,
                 'next_session' => $summary->nextSession !== null
                     ? $this->mapSession($summary->nextSession)
@@ -43,6 +45,7 @@ final class DashboardSummaryResource extends JsonResource
                     'amount_cents' => $payment->amountCents,
                     'formatted_amount' => $payment->formattedAmount,
                     'payment_method' => $payment->paymentMethod,
+                    'status' => $payment->status,
                     'paid_at' => $payment->paidAt,
                 ],
                 $summary->recentPayments,

@@ -10,19 +10,20 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, subtitle, icon, iconBgClass }: KpiCardProps) {
   return (
-    <article className="flex items-start justify-between gap-3 rounded-xl border border-[#E6E7E2] bg-white p-5">
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-[#6B7280]">{label}</p>
-        <p className="tabular-nums mt-2 text-2xl font-bold tracking-tight text-[#17191C]">{value}</p>
-        <p className="mt-1.5 text-xs text-[#6B7280]">{subtitle}</p>
+    <article className="min-w-0 rounded-[3px] border border-[#e7e8e2] bg-white px-4 pt-[15px] pb-[14px]">
+      <div className="flex items-center justify-between gap-1.5 text-[10px] text-[#777971]">
+        <span>{label}</span>
+        <span
+          className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full ${iconBgClass}`}
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
       </div>
-      <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${iconBgClass}`}
-        aria-hidden="true"
-      >
-        {icon}
-      </div>
+      <strong className="font-display tabular-nums mt-[13px] mb-1 block truncate text-[25px] leading-none font-semibold text-[#22251f]">
+        {value}
+      </strong>
+      <span className="block text-[9px] text-[#9a9c94]">{subtitle}</span>
     </article>
   );
 }
-

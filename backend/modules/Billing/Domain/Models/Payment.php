@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Modules\Billing\Domain\Enums\PaymentMethod;
+use Modules\Billing\Domain\Enums\PaymentStatus;
 
 /**
  * @property int $id
@@ -18,6 +19,7 @@ use Modules\Billing\Domain\Enums\PaymentMethod;
  * @property string $plan_name_snapshot
  * @property int $amount_cents
  * @property PaymentMethod $payment_method
+ * @property PaymentStatus $status
  * @property Carbon $paid_at
  * @property string|null $notes
  * @property Carbon|null $created_at
@@ -31,6 +33,7 @@ use Modules\Billing\Domain\Enums\PaymentMethod;
     'plan_name_snapshot',
     'amount_cents',
     'payment_method',
+    'status',
     'paid_at',
     'notes',
 ])]
@@ -46,6 +49,7 @@ final class Payment extends Model
             'plan_id' => 'integer',
             'amount_cents' => 'integer',
             'payment_method' => PaymentMethod::class,
+            'status' => PaymentStatus::class,
             'paid_at' => 'date',
         ];
     }

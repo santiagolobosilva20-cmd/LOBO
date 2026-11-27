@@ -60,6 +60,14 @@ final class EloquentMemberRepository implements MemberRepositoryInterface
         return Member::query()->select(self::COLUMNS)->find($id);
     }
 
+    public function findByEmail(string $email): ?Member
+    {
+        return Member::query()
+            ->select(self::COLUMNS)
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
+            ->first();
+    }
+
     public function findByNormalizedName(string $fullName): ?Member
     {
         return Member::query()

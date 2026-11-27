@@ -11,6 +11,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Modules\Auth\Presentation\Http\Middleware\AuthenticateApiToken;
+use Modules\Auth\Presentation\Http\Middleware\RequireApiRole;
 use Modules\Shared\Domain\Exceptions\DomainException;
 use Modules\Shared\Presentation\Http\Responses\ApiErrorResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -23,7 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'auth.token' => AuthenticateApiToken::class,
+            'role' => RequireApiRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
