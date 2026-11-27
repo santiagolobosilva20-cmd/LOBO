@@ -25,7 +25,7 @@ final class DatabaseSeeder extends Seeder
         $scheduleService = app(ScheduleService::class);
 
         if ($planService->list(new ListPlansFilterData(new PaginationQuery()))->total === 0) {
-            $planService->create(new CreatePlanData(
+            (void) $planService->create(new CreatePlanData(
                 name: 'Pase diario',
                 priceCents: 12000,
                 durationDays: 1,
@@ -35,7 +35,7 @@ final class DatabaseSeeder extends Seeder
                 features: ['Acceso por un día', 'Zona de peso libre', 'Cardio y vestidores'],
                 isFeatured: false,
             ));
-            $planService->create(new CreatePlanData(
+            (void) $planService->create(new CreatePlanData(
                 name: 'Mensualidad',
                 priceCents: 89000,
                 durationDays: 30,
@@ -45,7 +45,7 @@ final class DatabaseSeeder extends Seeder
                 features: ['Acceso ilimitado', 'Clases grupales incluidas', 'Evaluación inicial'],
                 isFeatured: true,
             ));
-            $planService->create(new CreatePlanData(
+            (void) $planService->create(new CreatePlanData(
                 name: 'Trimestral',
                 priceCents: 235000,
                 durationDays: 90,
@@ -133,7 +133,7 @@ final class DatabaseSeeder extends Seeder
             ];
 
             foreach ($scheduleRows as [$wId, $day, $room, $coach, $hour, $minute, $dur, $cap, $enrolled, $color]) {
-                $scheduleService->create(new CreateClassSessionData(
+                (void) $scheduleService->create(new CreateClassSessionData(
                     workoutId: $wId,
                     room: $room,
                     instructorName: $coach,

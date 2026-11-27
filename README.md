@@ -120,6 +120,7 @@ Plantillas sincronizadas en [`.env.example`](file:///home/omicron/Documentos/gym
 | `DB_DATABASE` | `string` | Sí | Nombre de la base de datos | `lobo` |
 | `DB_USERNAME` | `string` | Sí | Usuario de conexión a PostgreSQL | `postgres` |
 | `DB_PASSWORD` | `string` | Sí | Contraseña del usuario de base de datos | `change_me_in_local_env` |
+| `DB_SSLMODE` | `string` | No | Modo TLS (`prefer` en local, `require` en Neon/cloud) | `prefer` |
 | `SESSION_DRIVER` | `string` | No | Driver de sesiones HTTP | `array` |
 | `SESSION_LIFETIME` | `integer` | No | Duración de sesión en minutos | `120` |
 | `SESSION_ENCRYPT` | `boolean` | No | Cifrado de payload de sesión | `false` |
@@ -155,11 +156,13 @@ cp backend/.env.example backend/.env
 php backend/artisan key:generate
 ```
 
-3. Crear bases de datos PostgreSQL, migrar y sembrar el catálogo base (`Pase diario $120`, `Mensualidad $890`, `Trimestral $2,350`, 4 disciplinas y horarios `Lunes`–`Sábado`):
+3. Crear bases de datos PostgreSQL (`lobo` y `lobo_test` en instancia local o en **Neon Serverless Postgres** con `DB_SSLMODE=require`), migrar y sembrar el catálogo base (`Pase diario $120`, `Mensualidad $890`, `Trimestral $2,350`, 4 disciplinas y horarios `Lunes`–`Sábado`):
 
 ```bash
+# En PostgreSQL local (omitir si ya existen las bases en Neon):
 createdb -U postgres lobo
 createdb -U postgres lobo_test
+
 php backend/artisan migrate --seed
 ```
 
