@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Modules\Training\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Modules\Shared\Presentation\Http\Requests\RequestActorResolver;
 use Modules\Shared\Presentation\Http\Responses\PaginatedJsonResponse;
+use Modules\Training\Application\DTOs\ListWorkoutLogsFilterData;
 use Modules\Training\Application\Services\WorkoutLogService;
 use Modules\Training\Presentation\Http\Requests\ListWorkoutLogsRequest;
+use Modules\Training\Presentation\Http\Requests\StoreMemberWorkoutLogRequest;
 use Modules\Training\Presentation\Http\Requests\StoreWorkoutLogRequest;
 use Modules\Training\Presentation\Http\Resources\WorkoutLogResource;
 
@@ -38,6 +42,41 @@ final readonly class WorkoutLogController
     public function destroy(int $logId): JsonResponse
     {
         $this->workoutLogService->delete($logId);
+
+        return response()->json(status: 204);
+    }
+
+    public function memberIndex(ListWorkoutLogsRequest $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $base = $request->toDto();
+
+        return PaginatedJsonResponse::fromResult(
+            result: $this->workoutLogService->list(new ListWorkoutLogsFilterData(
+                pagination: $base->pagination,
+                memberId: $memberId,
+                category: $base->category,
+                search: $base->search,
+            )),
+            resourceClass: WorkoutLogResource::class,
+            request: $request,
+        );
+    }
+
+    public function memberStore(StoreMemberWorkoutLogRequest $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $log = $this->workoutLogService->record($request->toDtoForMember($memberId));
+
+        return (new WorkoutLogResource($log))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function memberDestroy(Request $request, int $logId): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $this->workoutLogService->deleteOwned($logId, $memberId);
 
         return response()->json(status: 204);
     }

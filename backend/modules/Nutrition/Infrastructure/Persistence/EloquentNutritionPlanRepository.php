@@ -18,6 +18,7 @@ final class EloquentNutritionPlanRepository implements NutritionPlanRepositoryIn
         ?bool $isTemplate = null,
         ?int $memberId = null,
         ?string $search = null,
+        bool $includeTemplates = false,
     ): PaginatedResult {
         /** @var Builder<NutritionPlan> $builder */
         $builder = NutritionPlan::query()
@@ -29,12 +30,19 @@ final class EloquentNutritionPlanRepository implements NutritionPlanRepositoryIn
             $builder->where('goal', $goal);
         }
 
-        if ($isTemplate !== null) {
-            $builder->where('is_template', $isTemplate);
-        }
+        if ($memberId !== null && $includeTemplates) {
+            $builder->where(static function (Builder $sub) use ($memberId): void {
+                $sub->where('member_id', $memberId)
+                    ->orWhere('is_template', true);
+            });
+        } else {
+            if ($isTemplate !== null) {
+                $builder->where('is_template', $isTemplate);
+            }
 
-        if ($memberId !== null) {
-            $builder->where('member_id', $memberId);
+            if ($memberId !== null) {
+                $builder->where('member_id', $memberId);
+            }
         }
 
         if ($search !== null && trim($search) !== '') {

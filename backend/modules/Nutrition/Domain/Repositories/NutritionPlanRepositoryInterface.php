@@ -19,6 +19,7 @@ interface NutritionPlanRepositoryInterface
         ?bool $isTemplate = null,
         ?int $memberId = null,
         ?string $search = null,
+        bool $includeTemplates = false,
     ): PaginatedResult;
 
     public function findByIdWithMeals(int $id): ?NutritionPlan;

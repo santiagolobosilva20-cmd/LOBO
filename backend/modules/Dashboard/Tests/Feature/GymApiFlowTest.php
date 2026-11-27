@@ -3,10 +3,25 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Auth\Application\Services\AuthService;
+use Modules\Auth\Domain\Enums\UserRole;
+use Modules\Auth\Domain\Models\AccountUser;
+use Modules\Auth\Domain\Repositories\AuthRepositoryInterface;
 
 uses(RefreshDatabase::class);
 
 it('runs full gym workflow with memberships, routines, workout logs and nutrition plans', function (): void {
+    $admin = app(AuthRepositoryInterface::class)->saveUser(new AccountUser([
+        'name' => 'Admin Test',
+        'email' => 'admin.flow@loboclub.com',
+        'role' => UserRole::Admin,
+        'member_id' => null,
+        'password' => 'test-pass-1234',
+    ]));
+    $token = app(AuthService::class)->issueTokenForUser($admin, 'test');
+
+    $this->withToken($token);
+
     $planId = $this->postJson('/api/v1/plans', [
         'name' => 'Mensualidad',
         'tagline' => '02 / FAVORITO LOBO',

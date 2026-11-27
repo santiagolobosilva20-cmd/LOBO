@@ -19,6 +19,7 @@ interface RoutineRepositoryInterface
         ?bool $isTemplate = null,
         ?int $memberId = null,
         ?string $search = null,
+        bool $includeTemplates = false,
     ): PaginatedResult;
 
     public function findByIdWithExercises(int $id): ?Routine;

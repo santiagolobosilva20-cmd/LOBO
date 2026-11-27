@@ -7,6 +7,7 @@ namespace Modules\Scheduling\Infrastructure\Persistence;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Scheduling\Domain\Enums\SessionStatus;
+use Modules\Scheduling\Domain\Models\ClassBooking;
 use Modules\Scheduling\Domain\Models\ClassSession;
 use Modules\Scheduling\Domain\Repositories\ClassSessionRepositoryInterface;
 use Modules\Shared\Application\DTOs\PaginatedResult;
@@ -110,6 +111,35 @@ final class EloquentClassSessionRepository implements ClassSessionRepositoryInte
     public function findByIdForUpdate(int $id): ?ClassSession
     {
         return $this->baseQuery()->lockForUpdate()->find($id);
+    }
+
+    public function findBooking(int $sessionId, int $memberId): ?ClassBooking
+    {
+        return ClassBooking::query()
+            ->where('class_session_id', $sessionId)
+            ->where('member_id', $memberId)
+            ->first();
+    }
+
+    public function saveBooking(ClassBooking $booking): ClassBooking
+    {
+        $booking->save();
+
+        return $booking->refresh();
+    }
+
+    public function listBookedSessionIdsForMember(int $memberId): array
+    {
+        /** @var list<int> $ids */
+        $ids = ClassBooking::query()
+            ->where('member_id', $memberId)
+            ->where('status', 'booked')
+            ->pluck('class_session_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->values()
+            ->all();
+
+        return $ids;
     }
 
     public function save(ClassSession $session): ClassSession

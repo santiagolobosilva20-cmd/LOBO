@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Nutrition\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Modules\Nutrition\Application\DTOs\ListNutritionPlansFilterData;
 use Modules\Nutrition\Application\Services\NutritionService;
 use Modules\Nutrition\Presentation\Http\Requests\AssignNutritionPlanRequest;
 use Modules\Nutrition\Presentation\Http\Requests\ListNutritionPlansRequest;
 use Modules\Nutrition\Presentation\Http\Requests\SaveNutritionPlanRequest;
 use Modules\Nutrition\Presentation\Http\Resources\NutritionPlanResource;
+use Modules\Shared\Presentation\Http\Requests\RequestActorResolver;
 use Modules\Shared\Presentation\Http\Responses\PaginatedJsonResponse;
 
 final readonly class NutritionPlanController
@@ -61,5 +63,45 @@ final readonly class NutritionPlanController
         $this->nutritionService->delete($planId);
 
         return response()->json(status: 204);
+    }
+
+    public function memberIndex(ListNutritionPlansRequest $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $base = $request->toDto();
+        $scope = $request->string('scope')->toString();
+
+        $filter = match ($scope) {
+            'mine' => new ListNutritionPlansFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: false,
+                memberId: $memberId,
+                search: $base->search,
+                includeTemplates: false,
+            ),
+            'templates' => new ListNutritionPlansFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: true,
+                memberId: null,
+                search: $base->search,
+                includeTemplates: false,
+            ),
+            default => new ListNutritionPlansFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: null,
+                memberId: $memberId,
+                search: $base->search,
+                includeTemplates: true,
+            ),
+        };
+
+        return PaginatedJsonResponse::fromResult(
+            result: $this->nutritionService->list($filter),
+            resourceClass: NutritionPlanResource::class,
+            request: $request,
+        );
     }
 }

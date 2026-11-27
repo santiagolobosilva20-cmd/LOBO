@@ -18,5 +18,6 @@ final readonly class PaymentSummaryData
         public string $paidAt,
         public ?string $notes,
         public ?string $createdAt,
+        public string $status = 'paid',
     ) {}
 }

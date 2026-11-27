@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Modules\Memberships\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Modules\Memberships\Application\DTOs\ListMembershipsFilterData;
 use Modules\Memberships\Application\Services\MembershipService;
 use Modules\Memberships\Presentation\Http\Requests\ListMembershipsRequest;
 use Modules\Memberships\Presentation\Http\Requests\RenewMembershipRequest;
 use Modules\Memberships\Presentation\Http\Requests\StoreMembershipRequest;
 use Modules\Memberships\Presentation\Http\Resources\MembershipResource;
+use Modules\Shared\Application\DTOs\PaginationQuery;
+use Modules\Shared\Presentation\Http\Requests\RequestActorResolver;
 
 final readonly class MembershipController
 {
@@ -74,5 +78,29 @@ final readonly class MembershipController
         $membership = $this->membershipService->cancel($membershipId);
 
         return (new MembershipResource($membership))->response();
+    }
+
+    public function memberIndex(Request $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $page = max(1, $request->integer('page', 1));
+        $perPage = max(1, min(100, $request->integer('per_page', 20)));
+
+        $result = $this->membershipService->list(new ListMembershipsFilterData(
+            pagination: new PaginationQuery($page, $perPage),
+            memberId: $memberId,
+        ));
+        $active = $this->membershipService->findActiveForMember($memberId);
+
+        return response()->json([
+            'data' => MembershipResource::collection($result->items)->resolve($request),
+            'meta' => [
+                'current_page' => $result->currentPage,
+                'per_page' => $result->perPage,
+                'total' => $result->total,
+                'last_page' => $result->lastPage,
+            ],
+            'active_membership' => $active !== null ? (new MembershipResource($active))->resolve($request) : null,
+        ]);
     }
 }

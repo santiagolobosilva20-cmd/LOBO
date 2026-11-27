@@ -38,6 +38,7 @@ final readonly class RoutineService
             isTemplate: $filter->isTemplate,
             memberId: $filter->memberId,
             search: $filter->search,
+            includeTemplates: $filter->includeTemplates,
         );
 
         return new PaginatedResult(

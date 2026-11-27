@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Training\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Modules\Shared\Presentation\Http\Requests\RequestActorResolver;
 use Modules\Shared\Presentation\Http\Responses\PaginatedJsonResponse;
+use Modules\Training\Application\DTOs\ListRoutinesFilterData;
 use Modules\Training\Application\Services\RoutineService;
 use Modules\Training\Presentation\Http\Requests\AssignRoutineRequest;
 use Modules\Training\Presentation\Http\Requests\ListRoutinesRequest;
@@ -61,5 +63,45 @@ final readonly class RoutineController
         $this->routineService->delete($routineId);
 
         return response()->json(status: 204);
+    }
+
+    public function memberIndex(ListRoutinesRequest $request): JsonResponse
+    {
+        $memberId = RequestActorResolver::requireMemberId($request);
+        $base = $request->toDto();
+        $scope = $request->string('scope')->toString();
+
+        $filter = match ($scope) {
+            'mine' => new ListRoutinesFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: false,
+                memberId: $memberId,
+                search: $base->search,
+                includeTemplates: false,
+            ),
+            'templates' => new ListRoutinesFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: true,
+                memberId: null,
+                search: $base->search,
+                includeTemplates: false,
+            ),
+            default => new ListRoutinesFilterData(
+                pagination: $base->pagination,
+                goal: $base->goal,
+                isTemplate: null,
+                memberId: $memberId,
+                search: $base->search,
+                includeTemplates: true,
+            ),
+        };
+
+        return PaginatedJsonResponse::fromResult(
+            result: $this->routineService->list($filter),
+            resourceClass: RoutineResource::class,
+            request: $request,
+        );
     }
 }

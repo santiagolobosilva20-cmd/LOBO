@@ -10,6 +10,7 @@ use Modules\Scheduling\Application\DTOs\CreateClassSessionData;
 use Modules\Scheduling\Contracts\DTOs\ClassSessionSummaryData;
 use Modules\Scheduling\Contracts\Queries\ScheduleSummaryQueryInterface;
 use Modules\Scheduling\Domain\Enums\SessionStatus;
+use Modules\Scheduling\Domain\Models\ClassBooking;
 use Modules\Scheduling\Domain\Models\ClassSession;
 use Modules\Scheduling\Domain\Repositories\ClassSessionRepositoryInterface;
 use Modules\Scheduling\Domain\Repositories\WorkoutRepositoryInterface;
@@ -108,6 +109,78 @@ final readonly class ScheduleService implements ScheduleSummaryQueryInterface
                 'accent_color' => $data->accentColor,
                 'status' => $data->status,
             ]);
+
+            return $this->toSummary($this->sessions->save($session));
+        });
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function listBookedSessionIdsForMember(int $memberId): array
+    {
+        return $this->sessions->listBookedSessionIdsForMember($memberId);
+    }
+
+    #[\NoDiscard]
+    public function bookForMember(int $sessionId, int $memberId, string $memberName): ClassSessionSummaryData
+    {
+        return DB::transaction(function () use ($sessionId, $memberId, $memberName): ClassSessionSummaryData {
+            $session = $this->sessions->findByIdForUpdate($sessionId);
+            if ($session === null) {
+                throw new ResourceNotFoundException('ClassSession', $sessionId);
+            }
+
+            if ($session->status !== SessionStatus::Scheduled) {
+                throw new ConflictException('No es posible reservar en una clase que no está programada.');
+            }
+
+            $existingBooking = $this->sessions->findBooking($sessionId, $memberId);
+            if ($existingBooking !== null && $existingBooking->status === 'booked') {
+                throw new ConflictException('Ya tienes un cupo reservado en esta clase.');
+            }
+
+            if ($session->enrolled_count >= $session->capacity) {
+                throw new ConflictException('La clase ya alcanzó su capacidad máxima.');
+            }
+
+            if ($existingBooking !== null) {
+                $existingBooking->status = 'booked';
+                $existingBooking->member_name_snapshot = trim($memberName);
+                $this->sessions->saveBooking($existingBooking);
+            } else {
+                $this->sessions->saveBooking(new ClassBooking([
+                    'class_session_id' => $sessionId,
+                    'member_id' => $memberId,
+                    'member_name_snapshot' => trim($memberName),
+                    'status' => 'booked',
+                ]));
+            }
+
+            $session->enrolled_count += 1;
+
+            return $this->toSummary($this->sessions->save($session));
+        });
+    }
+
+    #[\NoDiscard]
+    public function cancelForMember(int $sessionId, int $memberId): ClassSessionSummaryData
+    {
+        return DB::transaction(function () use ($sessionId, $memberId): ClassSessionSummaryData {
+            $session = $this->sessions->findByIdForUpdate($sessionId);
+            if ($session === null) {
+                throw new ResourceNotFoundException('ClassSession', $sessionId);
+            }
+
+            $booking = $this->sessions->findBooking($sessionId, $memberId);
+            if ($booking === null || $booking->status !== 'booked') {
+                throw new ConflictException('No tienes una reserva activa en esta clase.');
+            }
+
+            $booking->status = 'cancelled';
+            $this->sessions->saveBooking($booking);
+
+            $session->enrolled_count = max(0, $session->enrolled_count - 1);
 
             return $this->toSummary($this->sessions->save($session));
         });

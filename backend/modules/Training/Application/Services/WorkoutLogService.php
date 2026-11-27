@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Training\Application\Services;
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Modules\Members\Contracts\DTOs\MemberSummaryData;
 use Modules\Members\Contracts\Queries\MemberLookupInterface;
@@ -79,6 +80,22 @@ final readonly class WorkoutLogService
             if ($log === null) {
                 throw new ResourceNotFoundException('WorkoutLog', $id);
             }
+            $this->logs->delete($log);
+        });
+    }
+
+    public function deleteOwned(int $id, int $memberId): void
+    {
+        DB::transaction(function () use ($id, $memberId): void {
+            $log = $this->logs->findById($id);
+            if ($log === null) {
+                throw new ResourceNotFoundException('WorkoutLog', $id);
+            }
+
+            if ($log->member_id !== $memberId) {
+                throw new AuthorizationException('No puedes eliminar entrenamientos de otro socio.');
+            }
+
             $this->logs->delete($log);
         });
     }

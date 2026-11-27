@@ -9,7 +9,24 @@ arch('all module classes declare strict types')
 arch('shared module does not depend on business modules')
     ->expect('Modules\Shared')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members',
+        'Modules\Plans',
+        'Modules\Billing',
+        'Modules\Memberships',
+        'Modules\Scheduling',
+        'Modules\Training',
+        'Modules\Nutrition',
+        'Modules\Dashboard',
+    ]);
+
+arch('auth only consumes members contracts')
+    ->expect('Modules\Auth')
+    ->not->toUse([
+        'Modules\Members\Domain',
+        'Modules\Members\Application',
+        'Modules\Members\Infrastructure',
+        'Modules\Members\Presentation',
         'Modules\Plans',
         'Modules\Billing',
         'Modules\Memberships',
@@ -22,6 +39,7 @@ arch('shared module does not depend on business modules')
 arch('members module is isolated from peer business modules')
     ->expect('Modules\Members')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Plans',
         'Modules\Billing',
         'Modules\Memberships',
@@ -34,6 +52,7 @@ arch('members module is isolated from peer business modules')
 arch('plans module is isolated from peer business modules')
     ->expect('Modules\Plans')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members',
         'Modules\Billing',
         'Modules\Memberships',
@@ -46,6 +65,7 @@ arch('plans module is isolated from peer business modules')
 arch('scheduling module is isolated from peer business modules')
     ->expect('Modules\Scheduling')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members',
         'Modules\Plans',
         'Modules\Billing',
@@ -58,6 +78,7 @@ arch('scheduling module is isolated from peer business modules')
 arch('billing only consumes members and plans contracts')
     ->expect('Modules\Billing')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members\Domain',
         'Modules\Members\Application',
         'Modules\Members\Infrastructure',
@@ -76,6 +97,7 @@ arch('billing only consumes members and plans contracts')
 arch('memberships only consumes members, plans and billing contracts')
     ->expect('Modules\Memberships')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members\Domain',
         'Modules\Members\Application',
         'Modules\Members\Infrastructure',
@@ -97,6 +119,7 @@ arch('memberships only consumes members, plans and billing contracts')
 arch('training only consumes members contracts')
     ->expect('Modules\Training')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members\Domain',
         'Modules\Members\Application',
         'Modules\Members\Infrastructure',
@@ -112,6 +135,7 @@ arch('training only consumes members contracts')
 arch('nutrition only consumes members contracts')
     ->expect('Modules\Nutrition')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members\Domain',
         'Modules\Members\Application',
         'Modules\Members\Infrastructure',
@@ -127,6 +151,7 @@ arch('nutrition only consumes members contracts')
 arch('dashboard only consumes contracts from other modules')
     ->expect('Modules\Dashboard')
     ->not->toUse([
+        'Modules\Auth',
         'Modules\Members\Domain',
         'Modules\Members\Application',
         'Modules\Members\Infrastructure',

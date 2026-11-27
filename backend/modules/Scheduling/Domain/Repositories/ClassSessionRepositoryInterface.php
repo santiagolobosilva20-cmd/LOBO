@@ -6,6 +6,7 @@ namespace Modules\Scheduling\Domain\Repositories;
 
 use Carbon\CarbonImmutable;
 use Modules\Scheduling\Domain\Enums\SessionStatus;
+use Modules\Scheduling\Domain\Models\ClassBooking;
 use Modules\Scheduling\Domain\Models\ClassSession;
 use Modules\Shared\Application\DTOs\PaginatedResult;
 use Modules\Shared\Application\DTOs\PaginationQuery;
@@ -31,6 +32,15 @@ interface ClassSessionRepositoryInterface
     public function findById(int $id): ?ClassSession;
 
     public function findByIdForUpdate(int $id): ?ClassSession;
+
+    public function findBooking(int $sessionId, int $memberId): ?ClassBooking;
+
+    public function saveBooking(ClassBooking $booking): ClassBooking;
+
+    /**
+     * @return list<int>
+     */
+    public function listBookedSessionIdsForMember(int $memberId): array;
 
     public function save(ClassSession $session): ClassSession;
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Providers\AppServiceProvider;
+use Modules\Auth\Infrastructure\Providers\AuthServiceProvider;
 use Modules\Billing\Infrastructure\Providers\BillingServiceProvider;
 use Modules\Dashboard\Infrastructure\Providers\DashboardServiceProvider;
 use Modules\Members\Infrastructure\Providers\MembersServiceProvider;
@@ -17,6 +18,7 @@ return [
     AppServiceProvider::class,
     SharedServiceProvider::class,
     MembersServiceProvider::class,
+    AuthServiceProvider::class,
     PlansServiceProvider::class,
     BillingServiceProvider::class,
     MembershipsServiceProvider::class,

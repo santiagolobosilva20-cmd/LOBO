@@ -6,6 +6,7 @@ namespace Modules\Billing\Domain\Repositories;
 
 use Carbon\CarbonImmutable;
 use Modules\Billing\Domain\Enums\PaymentMethod;
+use Modules\Billing\Domain\Enums\PaymentStatus;
 use Modules\Billing\Domain\Models\Payment;
 use Modules\Shared\Application\DTOs\PaginatedResult;
 use Modules\Shared\Application\DTOs\PaginationQuery;
@@ -20,6 +21,8 @@ interface PaymentRepositoryInterface
         ?string $search = null,
         ?PaymentMethod $method = null,
         ?CarbonImmutable $month = null,
+        ?int $memberId = null,
+        ?PaymentStatus $status = null,
     ): PaginatedResult;
 
     /**
@@ -36,6 +39,8 @@ interface PaymentRepositoryInterface
      * @return array{revenue_cents: int, distinct_members: int, count: int}
      */
     public function getAllTimeAggregate(): array;
+
+    public function countPending(): int;
 
     public function findById(int $id): ?Payment;
 

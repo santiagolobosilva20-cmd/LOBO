@@ -14,5 +14,6 @@ final readonly class ListNutritionPlansFilterData
         public ?bool $isTemplate = null,
         public ?int $memberId = null,
         public ?string $search = null,
+        public bool $includeTemplates = false,
     ) {}
 }

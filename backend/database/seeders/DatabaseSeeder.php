@@ -6,6 +6,14 @@ namespace Database\Seeders;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Modules\Auth\Domain\Enums\UserRole;
+use Modules\Auth\Domain\Models\AccountUser;
+use Modules\Auth\Domain\Repositories\AuthRepositoryInterface;
+use Modules\Billing\Application\DTOs\ListPaymentsFilterData;
+use Modules\Billing\Application\DTOs\RegisterPaymentData;
+use Modules\Billing\Application\Services\BillingService;
+use Modules\Billing\Domain\Enums\PaymentMethod;
+use Modules\Members\Contracts\Queries\MemberLookupInterface;
 use Modules\Nutrition\Application\DTOs\ListNutritionPlansFilterData;
 use Modules\Nutrition\Application\DTOs\MealEntryInputData;
 use Modules\Nutrition\Application\DTOs\SaveNutritionPlanData;
@@ -21,10 +29,13 @@ use Modules\Scheduling\Application\Services\ScheduleService;
 use Modules\Scheduling\Application\Services\WorkoutService;
 use Modules\Scheduling\Domain\Enums\WorkoutLevel;
 use Modules\Shared\Application\DTOs\PaginationQuery;
+use Modules\Training\Application\DTOs\CreateWorkoutLogData;
 use Modules\Training\Application\DTOs\ListRoutinesFilterData;
+use Modules\Training\Application\DTOs\ListWorkoutLogsFilterData;
 use Modules\Training\Application\DTOs\RoutineExerciseInputData;
 use Modules\Training\Application\DTOs\SaveRoutineData;
 use Modules\Training\Application\Services\RoutineService;
+use Modules\Training\Application\Services\WorkoutLogService;
 use Modules\Training\Domain\Enums\RoutineGoal;
 
 final class DatabaseSeeder extends Seeder
@@ -34,6 +45,7 @@ final class DatabaseSeeder extends Seeder
         $this->seedPlansAndSchedule();
         $this->seedRoutines();
         $this->seedNutritionPlans();
+        $this->seedAccountsAndMemberExperience();
     }
 
     private function seedPlansAndSchedule(): void
@@ -42,7 +54,7 @@ final class DatabaseSeeder extends Seeder
         $workoutService = app(WorkoutService::class);
         $scheduleService = app(ScheduleService::class);
 
-        if ($planService->list(new ListPlansFilterData(new PaginationQuery()))->total === 0) {
+        if ($planService->list(new ListPlansFilterData(new PaginationQuery))->total === 0) {
             (void) $planService->create(new CreatePlanData(
                 name: 'Pase diario',
                 priceCents: 12000,
@@ -75,7 +87,7 @@ final class DatabaseSeeder extends Seeder
             ));
         }
 
-        if ($workoutService->list(new PaginationQuery())->total === 0) {
+        if ($workoutService->list(new PaginationQuery)->total === 0) {
             $fuerza = $workoutService->create(new CreateWorkoutData(
                 name: 'Fuerza funcional',
                 category: 'FUERZA',
@@ -163,7 +175,7 @@ final class DatabaseSeeder extends Seeder
     private function seedRoutines(): void
     {
         $routineService = app(RoutineService::class);
-        if ($routineService->list(new ListRoutinesFilterData(new PaginationQuery()))->total > 0) {
+        if ($routineService->list(new ListRoutinesFilterData(new PaginationQuery))->total > 0) {
             return;
         }
 
@@ -218,7 +230,7 @@ final class DatabaseSeeder extends Seeder
     private function seedNutritionPlans(): void
     {
         $nutritionService = app(NutritionService::class);
-        if ($nutritionService->list(new ListNutritionPlansFilterData(new PaginationQuery()))->total > 0) {
+        if ($nutritionService->list(new ListNutritionPlansFilterData(new PaginationQuery))->total > 0) {
             return;
         }
 
@@ -275,5 +287,89 @@ final class DatabaseSeeder extends Seeder
                 new MealEntryInputData(MealSlot::Dinner, 'Salmón sellado con quinoa y camote', '190 g salmón, 180 g quinoa cocida, ensalada con aceite de oliva', 800, 53, 94, 25, 4),
             ],
         ));
+    }
+
+    private function seedAccountsAndMemberExperience(): void
+    {
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
+        $authRepo = app(AuthRepositoryInterface::class);
+        $memberLookup = app(MemberLookupInterface::class);
+
+        $adminEmail = mb_strtolower(trim((string) config('auth_lobo.demo_admin_email', 'admin@loboclub.com')));
+        $adminPassword = config('auth_lobo.demo_admin_password');
+        if (is_string($adminPassword) && $adminPassword !== '' && $authRepo->findUserByEmail($adminEmail) === null) {
+            $authRepo->saveUser(new AccountUser([
+                'name' => 'Administrador LOBO',
+                'email' => $adminEmail,
+                'role' => UserRole::Admin,
+                'member_id' => null,
+                'password' => $adminPassword,
+            ]));
+        }
+
+        $memberEmail = mb_strtolower(trim((string) config('auth_lobo.demo_member_email', 'alex.rivera@loboclub.com')));
+        $memberPassword = config('auth_lobo.demo_member_password');
+        $alex = $memberLookup->findOrCreateByEmailAndName($memberEmail, 'Alex Rivera');
+
+        if (is_string($memberPassword) && $memberPassword !== '' && $authRepo->findUserByEmail($memberEmail) === null) {
+            $authRepo->saveUser(new AccountUser([
+                'name' => $alex->fullName,
+                'email' => $memberEmail,
+                'role' => UserRole::Member,
+                'member_id' => $alex->id,
+                'password' => $memberPassword,
+            ]));
+        }
+
+        $billingService = app(BillingService::class);
+        $planService = app(PlanService::class);
+        $routineService = app(RoutineService::class);
+        $workoutLogService = app(WorkoutLogService::class);
+        $nutritionService = app(NutritionService::class);
+
+        if ($billingService->list(new ListPaymentsFilterData(new PaginationQuery(1, 5), memberId: $alex->id))->total === 0) {
+            $plans = $planService->list(new ListPlansFilterData(new PaginationQuery(1, 10)))->items;
+            $mensual = collect($plans)->first(static fn ($plan): bool => $plan->slug === 'mensualidad') ?? ($plans[0] ?? null);
+            if ($mensual !== null) {
+                (void) $billingService->register(new RegisterPaymentData(
+                    planId: $mensual->id,
+                    paymentMethod: PaymentMethod::Card,
+                    memberId: $alex->id,
+                    paidAt: now()->toDateString(),
+                    notes: 'Membresía inicial socio demo',
+                ));
+            }
+        }
+
+        if ($routineService->list(new ListRoutinesFilterData(new PaginationQuery(1, 5), isTemplate: false, memberId: $alex->id))->total === 0) {
+            $templates = $routineService->list(new ListRoutinesFilterData(new PaginationQuery(1, 5), isTemplate: true))->items;
+            if ($templates !== []) {
+                (void) $routineService->assignToMember($templates[0]->id, $alex->id, null);
+            }
+        }
+
+        if ($workoutLogService->list(new ListWorkoutLogsFilterData(new PaginationQuery(1, 5), memberId: $alex->id))->total === 0) {
+            (void) $workoutLogService->record(new CreateWorkoutLogData(
+                title: 'Sesión Torso Empuje',
+                category: 'FUERZA',
+                memberId: $alex->id,
+                performedAt: now()->toDateString(),
+                durationMinutes: 55,
+                effortRpe: 8,
+                caloriesEstimate: 410,
+                notes: 'Progresión estable en press banca.',
+            ));
+        }
+
+        if ($nutritionService->list(new ListNutritionPlansFilterData(new PaginationQuery(1, 5), isTemplate: false, memberId: $alex->id))->total === 0) {
+            $nutritionTemplates = $nutritionService->list(new ListNutritionPlansFilterData(new PaginationQuery(1, 5), isTemplate: true))->items;
+            $selectedNutrition = collect($nutritionTemplates)->first(static fn ($plan): bool => str_contains($plan->title, 'Mantenimiento')) ?? ($nutritionTemplates[0] ?? null);
+            if ($selectedNutrition !== null) {
+                (void) $nutritionService->assignToMember($selectedNutrition->id, $alex->id, null);
+            }
+        }
     }
 }
