@@ -40,6 +40,7 @@ export function MembersPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('memberships');
   const [search, setSearch] = useState('');
   const [membershipFilter, setMembershipFilter] = useState<string>('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [page, setPage] = useState(1);
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -79,10 +80,11 @@ export function MembersPage() {
   });
 
   const paymentsQuery = useQuery({
-    queryKey: ['payments', { page, search }],
+    queryKey: ['payments', { page, search, paymentStatusFilter }],
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), per_page: '12' });
       if (search.trim() !== '') params.set('search', search.trim());
+      if (paymentStatusFilter !== '') params.set('status', paymentStatusFilter);
       return requestJson<PaymentsListResponse>(`/payments?${params.toString()}`);
     },
     retry: false,
@@ -130,6 +132,22 @@ export function MembersPage() {
     },
     onError: (err) => {
       setMshipError(err instanceof ApiError ? err.message : 'No se pudo asignar la membresía.');
+    },
+  });
+
+  const paymentReviewMutation = useMutation({
+    mutationFn: ({ id, decision }: { id: number; decision: 'approve' | 'reject' }) =>
+      requestJson(`/payments/${id}/${decision}`, { method: 'POST' }),
+    onSuccess: async (_res, vars) => {
+      await invalidateAll();
+      showToast(
+        vars.decision === 'approve'
+          ? 'Pago aprobado y membresía activada.'
+          : 'Solicitud de pago rechazada.',
+      );
+    },
+    onError: (err) => {
+      showToast(err instanceof ApiError ? err.message : 'No se pudo procesar la solicitud de pago.');
     },
   });
 
@@ -193,6 +211,7 @@ export function MembersPage() {
   const members = membersQuery.data?.data ?? [];
   const payments = paymentsQuery.data?.data ?? [];
   const billingStats = paymentsQuery.data?.stats;
+  const pendingPaymentsCount = billingStats?.pending_count ?? 0;
 
   const activeMeta =
     activeTab === 'memberships'
@@ -257,21 +276,21 @@ export function MembersPage() {
       <div className="mb-[14px] grid grid-cols-2 gap-[12px] md:grid-cols-3 lg:max-w-[700px]">
         <KpiCard
           label="Membresías activas"
-          value={membershipStats?.active_count ?? 0}
+          value={membershipsQuery.isLoading ? '...' : (membershipStats?.active_count ?? 0)}
           subtitle={`${membershipStats?.expiring_soon_count ?? 0} por vencer en ≤7 días`}
           icon={<Award className="h-[13px] w-[13px] stroke-[2] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
         />
         <KpiCard
           label="Socios registrados"
-          value={billingStats?.distinct_members_count ?? members.length}
+          value={paymentsQuery.isLoading ? '...' : (billingStats?.distinct_members_count ?? members.length)}
           subtitle="Comunidad en Neon DB"
           icon={<Users className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
           iconBgClass="bg-[#ffe0d8]"
         />
         <KpiCard
           label="Ingresos acumulados"
-          value={billingStats?.formatted_total_revenue ?? '$0.00'}
+          value={paymentsQuery.isLoading ? '...' : (billingStats?.formatted_total_revenue ?? '$0.00')}
           subtitle="Todos los movimientos"
           icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#dceefa]"
@@ -285,7 +304,13 @@ export function MembersPage() {
               {[
                 { key: 'memberships', label: 'Membresías' },
                 { key: 'members', label: 'Directorio de socios' },
-                { key: 'payments', label: 'Historial de pagos' },
+                {
+                  key: 'payments',
+                  label:
+                    pendingPaymentsCount > 0
+                      ? `Historial de pagos (${pendingPaymentsCount} pend.)`
+                      : 'Historial de pagos',
+                },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -321,6 +346,23 @@ export function MembersPage() {
                   <option value="expiring_soon">Por vencer (≤7d)</option>
                   <option value="paused">Pausadas</option>
                   <option value="expired">Vencidas</option>
+                </select>
+              ) : null}
+
+              {activeTab === 'payments' ? (
+                <select
+                  aria-label="Filtrar pagos por estado"
+                  value={paymentStatusFilter}
+                  onChange={(e) => {
+                    setPaymentStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-[34px] rounded-[3px] border border-[#e7e8e2] bg-white px-2.5 text-[10px] text-[#22251f] outline-none"
+                >
+                  <option value="">Todos los pagos</option>
+                  <option value="pending">En revisión</option>
+                  <option value="paid">Pagados</option>
+                  <option value="rejected">Rechazados</option>
                 </select>
               ) : null}
 
@@ -560,7 +602,16 @@ export function MembersPage() {
             </>
           ) : (
             <>
-              <PaymentsTable payments={payments} />
+              <PaymentsTable
+                payments={payments}
+                busyPaymentId={
+                  paymentReviewMutation.isPending
+                    ? (paymentReviewMutation.variables?.id ?? null)
+                    : null
+                }
+                onApprove={(id) => paymentReviewMutation.mutate({ id, decision: 'approve' })}
+                onReject={(id) => paymentReviewMutation.mutate({ id, decision: 'reject' })}
+              />
               {paymentsQuery.isLoading ? (
                 <p className="py-10 text-center text-[10px] text-[#73756e]">Consultando historial...</p>
               ) : payments.length === 0 ? (

@@ -63,15 +63,52 @@ export function extractApiError(payload: ApiErrorPayload, statusCode: number): {
 
 export const API_BASE = '/api/v1';
 
+const AUTH_TOKEN_KEY = 'lobo.auth.token';
+let inMemoryAuthToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
+
+export function getAuthToken(): string | null {
+  if (inMemoryAuthToken !== null) {
+    return inMemoryAuthToken;
+  }
+
+  try {
+    const stored = globalThis.localStorage?.getItem(AUTH_TOKEN_KEY) ?? null;
+    inMemoryAuthToken = stored;
+    return stored;
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string | null): void {
+  inMemoryAuthToken = token;
+  try {
+    if (token === null) {
+      globalThis.localStorage?.removeItem(AUTH_TOKEN_KEY);
+    } else {
+      globalThis.localStorage?.setItem(AUTH_TOKEN_KEY, token);
+    }
+  } catch {
+    // Storage unavailable in restricted runtime
+  }
+}
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 export async function requestJson<T>(
   path: string,
   options: RequestInit = {},
   fetchImpl: typeof fetch = globalThis.fetch,
 ): Promise<T> {
+  const token = getAuthToken();
   const response = await fetchImpl(`${API_BASE}${path}`, {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -84,6 +121,15 @@ export async function requestJson<T>(
   const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload & T;
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      !path.startsWith('/auth/login') &&
+      !path.startsWith('/auth/register') &&
+      !path.startsWith('/auth/demo-login')
+    ) {
+      setAuthToken(null);
+      unauthorizedHandler?.();
+    }
     throw new ApiError(extractApiError(payload, response.status));
   }
 

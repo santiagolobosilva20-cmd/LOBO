@@ -2,12 +2,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { AppRoutes } from '../app/App';
+import { AuthProvider } from '../features/auth/AuthContext';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { MembersPage } from '../features/members/MembersPage';
 import { NutritionPage } from '../features/nutrition/NutritionPage';
 import { PlansPage } from '../features/plans/PlansPage';
 import { RoutinesPage } from '../features/routines/RoutinesPage';
-import { ApiError, extractApiError, requestJson } from '../shared/api/http';
+import { ApiError, extractApiError, requestJson, setAuthToken } from '../shared/api/http';
+import { ToastProvider } from '../shared/components/ToastContext';
 import {
   formatCurrencyFromCents,
   getMealSlotLabel,
@@ -16,6 +19,7 @@ import {
   getMemberStatusLabel,
   getNutritionGoalLabel,
   getPaymentMethodLabel,
+  getPaymentStatusLabel,
   getRoutineGoalLabel,
 } from '../shared/utils/format';
 
@@ -25,6 +29,8 @@ describe('format helpers', () => {
     expect(formatCurrencyFromCents(89000)).toBe('$890.00');
     expect(getMemberInitials('Alex Rivera')).toBe('AR');
     expect(getPaymentMethodLabel('cash')).toBe('Efectivo');
+    expect(getPaymentStatusLabel('pending')).toBe('En revisión');
+    expect(getPaymentStatusLabel('paid')).toBe('Pagado');
     expect(getMemberStatusLabel('active')).toBe('Activo');
     expect(getMembershipStatusLabel('active')).toBe('Activa');
     expect(getRoutineGoalLabel('hypertrophy')).toBe('Hipertrofia');
@@ -315,6 +321,150 @@ describe('LOBO Gym Views', () => {
       expect(screen.getByText('Claras y avena')).toBeInTheDocument();
     });
 
+    fetchSpy.mockRestore();
+  });
+
+  it('redirects unauthenticated user to /login and renders demo login options when enabled', async () => {
+    setAuthToken(null);
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ data: { demo_login_enabled: true } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Ingresa a tu cuenta')).toBeInTheDocument();
+      expect(screen.getByText('Socio · Alex Rivera')).toBeInTheDocument();
+      expect(screen.getByText('Administrador LOBO')).toBeInTheDocument();
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it('renders Member Portal navigation and overview when authenticated as member', async () => {
+    setAuthToken('member-token-test');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes('/auth/me')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: {
+                id: 2,
+                name: 'Alex Rivera',
+                email: 'alex.rivera@loboclub.com',
+                role: 'member',
+                member_id: 1,
+                member_name: 'Alex Rivera',
+              },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      if (url.includes('/member/memberships')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: [],
+              meta: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
+              active_membership: {
+                id: 1,
+                member_id: 1,
+                member_name: 'Alex Rivera',
+                plan_id: 2,
+                plan_name: 'Mensualidad',
+                last_payment_id: 1,
+                starts_at: '2026-11-27',
+                ends_at: '2026-12-27',
+                days_remaining: 30,
+                is_expiring_soon: false,
+                status: 'active',
+                auto_renew: false,
+                notes: null,
+                created_at: null,
+              },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      if (url.includes('/member/schedule')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: [],
+              meta: { current_page: 1, per_page: 50, total: 0, last_page: 1 },
+              booked_session_ids: [],
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      if (url.includes('/healthz')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: { status: 'ok', database: 'connected', timestamp: '2026-11-27T00:00:00Z' },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            data: [],
+            meta: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Tu resumen personal')).toBeInTheDocument();
+      expect(screen.getByText('Mi membresía')).toBeInTheDocument();
+      expect(screen.getByText('Horarios y reservas')).toBeInTheDocument();
+      expect(screen.queryByText('Planes y precios')).not.toBeInTheDocument();
+    });
+
+    setAuthToken(null);
     fetchSpy.mockRestore();
   });
 });

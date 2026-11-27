@@ -6,20 +6,22 @@ Plataforma web para la administración operativa de un gimnasio (**LOBO — Club
 
 ## Arquitectura y flujo de datos
 
-El backend organiza el dominio en 9 contextos acotados independientes bajo `backend/modules/<Modulo>` (`Shared`, `Members`, `Plans`, `Billing`, `Memberships`, `Scheduling`, `Training`, `Nutrition`, `Dashboard`). Cada módulo separa estrictamente `Presentation -> Application -> Domain <- Infrastructure`. Ningún módulo importa modelos Eloquent, repositorios o lógica interna de sus pares; la colaboración entre contextos ocurre únicamente mediante interfaces en `Contracts/` y eventos de dominio (`PaymentRecorded`), verificada automáticamente en `ModularBoundariesTest.php`.
+El backend organiza el dominio en 10 contextos acotados independientes bajo `backend/modules/<Modulo>` (`Shared`, `Auth`, `Members`, `Plans`, `Billing`, `Memberships`, `Scheduling`, `Training`, `Nutrition`, `Dashboard`). Cada módulo separa estrictamente `Presentation -> Application -> Domain <- Infrastructure`. Ningún módulo importa modelos Eloquent, repositorios o lógica interna de sus pares; la colaboración entre contextos ocurre únicamente mediante interfaces en `Contracts/` y eventos de dominio (`PaymentRecorded`), verificada automáticamente en `ModularBoundariesTest.php`.
 
 ```mermaid
 flowchart LR
-    Client["React 19 + TS + Tailwind (5173)"] -->|"/api/v1/* (Proxy / JSON)"| Gateway["Laravel 13 API v1"]
+    Client["React 19 + TS + Tailwind (5173)"] -->|"/api/v1/* (Bearer + JSON)"| Gateway["Laravel 13 API v1 + RBAC"]
+    Gateway --> AuthMod["Auth (Sesiones / Tokens)"]
     Gateway --> Dash["Dashboard (Resumen BFF)"]
     Gateway --> Mem["Members (Socios)"]
     Gateway --> Pln["Plans (Planes y precios)"]
-    Gateway --> Bil["Billing (Pagos)"]
+    Gateway --> Bil["Billing (Pagos / Aprobación)"]
     Gateway --> Msh["Memberships (Membresías)"]
-    Gateway --> Sch["Scheduling (Horarios / Disciplinas)"]
+    Gateway --> Sch["Scheduling (Horarios / Reservas)"]
     Gateway --> Trn["Training (Rutinas / Bitácora)"]
     Gateway --> Nut["Nutrition (Alimentación)"]
 
+    AuthMod -.->|"Contracts"| Mem
     Dash -.->|"Contracts"| Mem
     Dash -.->|"Contracts"| Bil
     Dash -.->|"Contracts"| Msh
@@ -32,7 +34,8 @@ flowchart LR
     Trn -.->|"Contracts"| Mem
     Nut -.->|"Contracts"| Mem
 
-    Mem --> DB[("Neon PostgreSQL 18")]
+    AuthMod --> DB[("Neon PostgreSQL 18")]
+    Mem --> DB
     Pln --> DB
     Bil --> DB
     Msh --> DB
@@ -44,6 +47,7 @@ flowchart LR
 ### Reglas de fronteras modulares verificadas (`ModularBoundariesTest.php`)
 - Todo código bajo `Modules\` declara `declare(strict_types=1);`.
 - `Shared` no depende de ningún módulo de dominio.
+- `Auth` consume únicamente `Contracts\` de `Members`.
 - `Members`, `Plans` y `Scheduling` no dependen de ningún otro módulo de negocio.
 - `Billing` consume únicamente `Contracts\` de `Members` y `Plans` (nunca `Domain\`, `Application\`, `Infrastructure\` ni `Presentation\`).
 - `Memberships` consume únicamente `Contracts\` de `Members`, `Plans` y `Billing`.
@@ -77,12 +81,13 @@ flowchart LR
 │   ├── bootstrap/                    # Registro modular (providers.php) y mapeo JSON global de errores (app.php)
 │   ├── database/seeders/             # Seeder inicial (planes MXN, 4 disciplinas y grilla Lunes-Sábado)
 │   ├── modules/
-│   │   ├── Shared/                   # Money (MXN), GymOperatingHours, DomainException, PaginatedJsonResponse, /healthz
-│   │   ├── Members/                  # Socios (CRUD, email opcional, findOrCreateByName, conteo activos)
+│   │   ├── Shared/                   # Money (MXN), GymOperatingHours, DomainException, RequestActorResolver, /healthz
+│   │   ├── Auth/                     # Autenticación Bearer (users.role, api_tokens), RBAC y login/registro por rol
+│   │   ├── Members/                  # Socios (CRUD, email opcional, alta/enlace por email o nombre, conteo activos)
 │   │   ├── Plans/                    # Planes y precios (tagline, features, is_featured, precios en centavos)
-│   │   ├── Billing/                  # Ingresos por socio (pagos transaccionales, snapshots históricos, PaymentRecorded)
+│   │   ├── Billing/                  # Ingresos por socio (pagos, solicitudes pending, aprobación/rechazo, PaymentRecorded)
 │   │   ├── Memberships/              # Membresías con vigencia (alta/renovación/pausa/cancelación y activación por pago)
-│   │   ├── Scheduling/               # Entrenamientos (disciplinas con badge/imagen) y Horarios (Lun-Sáb, lockForUpdate)
+│   │   ├── Scheduling/               # Entrenamientos, horarios (Lun-Sáb) y reservas por socio (class_bookings)
 │   │   ├── Training/                 # Rutinas con ejercicios por día y bitácora de sesiones completadas (workout_logs)
 │   │   ├── Nutrition/                # Planes alimenticios, metas calóricas/macros y comidas por tiempo diario
 │   │   └── Dashboard/                # Read model BFF (/api/v1/dashboard/summary)
@@ -90,8 +95,8 @@ flowchart LR
 ├── frontend/                         # SPA React 19 + TypeScript + Tailwind CSS v4
 │   ├── public/images/                # Recursos fotográficos locales (hero y 4 entrenamientos)
 │   └── src/
-│       ├── app/                      # Enrutador, QueryClient y AppShell (sidebar LOBO + topbar + alerta DB)
-│       ├── features/                 # dashboard, billing, members (membresías/socios), schedule, plans, routines, workouts, nutrition
+│       ├── app/                      # Enrutador protegido por rol, QueryClient y AppShell (Admin vs Portal Socio)
+│       ├── features/                 # auth, member-portal, dashboard, billing, members, schedule, plans, routines, workouts, nutrition
 │       ├── shared/                   # Cliente HTTP tipado, KpiCard, AssignMemberModal, ToastContext y formateadores MXN/fechas
 │       └── tests/                    # Pruebas Vitest + Testing Library
 ├── .env.example                      # Plantilla raíz sincronizada de variables de entorno
@@ -150,6 +155,11 @@ Plantillas sincronizadas en [`.env.example`](file:///home/omicron/Documentos/gym
 | `MAIL_MAILER` | `string` | No | Driver de correo | `log` |
 | `MAIL_FROM_ADDRESS` | `string` | No | Dirección remitente por defecto | `noreply@example.com` |
 | `MAIL_FROM_NAME` | `string` | No | Nombre remitente por defecto | `${APP_NAME}` |
+| `LOBO_DEMO_LOGIN_ENABLED` | `boolean` | No | Habilita botones de acceso demo en entornos `local`/`testing` | `true` |
+| `LOBO_DEMO_ADMIN_EMAIL` | `string` | No | Correo de cuenta administrativa sembrada en desarrollo | `admin@loboclub.com` |
+| `LOBO_DEMO_ADMIN_PASSWORD` | `string` | No | Contraseña local para administrador sembrado | `change_me_admin` |
+| `LOBO_DEMO_MEMBER_EMAIL` | `string` | No | Correo de socio sembrado en desarrollo | `alex.rivera@loboclub.com` |
+| `LOBO_DEMO_MEMBER_PASSWORD` | `string` | No | Contraseña local para socio sembrado | `change_me_member` |
 
 ---
 
@@ -210,7 +220,13 @@ Todos los endpoints residen bajo `/api/v1` y devuelven respuestas JSON tipadas (
 | Método | Ruta | Módulo | Descripción | Payloads / Parámetros clave | Respuestas |
 | --- | --- | --- | --- | --- | --- |
 | `GET` | `/api/v1/healthz` | `Shared` | Estado de API y sonda real `SELECT 1` en BD | N/A | `200`, `503` |
-| `GET` | `/api/v1/dashboard/summary` | `Dashboard` | KPIs del mes, próxima clase, últimos pagos y clases destacadas | N/A | `200` |
+| `GET/POST` | `/api/v1/auth/{config\|login\|register\|demo-login}` | `Auth` | Inicio de sesión, alta de socio (`role=member`) y config demo | `{"email":"...","password":"..."}` | `200`, `201`, `401`, `409` |
+| `GET/POST` | `/api/v1/auth/{me\|logout}` | `Auth` | Perfil autenticado actual y revocación del token Bearer | Header `Authorization: Bearer ...` | `200`, `204`, `401` |
+| `GET` | `/api/v1/dashboard/summary` | `Dashboard` | KPIs del mes, próxima clase, últimos pagos y clases destacadas (solo `admin`) | N/A | `200`, `403` |
+| `GET/POST` | `/api/v1/payments/{id}/{approve\|reject}` | `Billing` | Aprobación (dispara `PaymentRecorded`) o rechazo de pagos en revisión (`admin`) | N/A | `200`, `403`, `409` |
+| `GET/POST` | `/api/v1/member/{memberships\|payments\|payment-requests}` | `Memberships` / `Billing` | Membresía activa, historial propio y solicitud de pago pendiente (`member`) | `{"plan_id":2,"payment_method":"transfer"}` | `200`, `201`, `403` |
+| `GET/POST/DELETE` | `/api/v1/member/schedule/sessions[/{id}/book]` | `Scheduling` | Horarios con reservas propias, reserva atómica y cancelación de cupo (`member`) | N/A | `200`, `409`, `403` |
+| `GET/POST/DELETE` | `/api/v1/member/{routines\|workout-logs\|nutrition/plans}` | `Training` / `Nutrition` | Rutina y alimentación del socio + bitácora personal verificando autoría | `scope=mine\|templates` | `200`, `201`, `204`, `403` |
 | `GET` | `/api/v1/members` | `Members` | Listado paginado de socios | `?search=&status=&page=&per_page=` | `200` |
 | `POST` | `/api/v1/members` | `Members` | Alta de socio (`email` opcional) | `{"full_name":"Alex Rivera","status":"active"}` | `201`, `422`, `409` |
 | `GET/PATCH/DELETE` | `/api/v1/members/{memberId}` | `Members` | Consulta, edición parcial y baja | Campos opcionales de socio | `200`, `204`, `404`, `409` |

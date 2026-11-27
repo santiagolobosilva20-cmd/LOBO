@@ -10,11 +10,32 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
+export type UserRole = 'admin' | 'member';
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  member_id: number | null;
+  member_name: string | null;
+}
+
+export interface AuthSessionPayload {
+  token: string;
+  user: AuthUser;
+}
+
+export interface AuthConfigStatus {
+  demo_login_enabled: boolean;
+}
+
 export interface BillingStatsMeta {
   total_revenue_cents: number;
   formatted_total_revenue: string;
   distinct_members_count: number;
   total_payments_count: number;
+  pending_count?: number;
 }
 
 export interface PaymentsListResponse extends PaginatedResponse<PaymentItem> {
@@ -74,6 +95,7 @@ export interface PlanItem {
 }
 
 export type PaymentMethod = 'cash' | 'card' | 'transfer';
+export type PaymentStatus = 'paid' | 'pending' | 'rejected';
 
 export interface PaymentItem {
   id: number;
@@ -84,8 +106,17 @@ export interface PaymentItem {
   amount_cents: number;
   formatted_amount: string;
   payment_method: PaymentMethod;
+  status?: PaymentStatus;
   paid_at: string;
   notes?: string | null;
+}
+
+export interface MemberMembershipsResponse extends PaginatedResponse<MembershipItem> {
+  active_membership: MembershipItem | null;
+}
+
+export interface MemberScheduleResponse extends PaginatedResponse<ClassSessionItem> {
+  booked_session_ids: number[];
 }
 
 export type MembershipStatus = 'active' | 'paused' | 'expired' | 'cancelled';

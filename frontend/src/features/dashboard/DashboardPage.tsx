@@ -135,14 +135,14 @@ export function DashboardPage() {
       <section aria-label="Indicadores del mes" className="grid grid-cols-2 gap-[8px] sm:gap-[12px] xl:grid-cols-4">
         <KpiCard
           label="Ingresos del mes"
-          value={kpis?.formatted_monthly_revenue ?? '$0.00'}
-          subtitle="Pagos registrados este mes"
+          value={summaryQuery.isLoading ? '...' : (kpis?.formatted_monthly_revenue ?? '$0.00')}
+          subtitle={summaryQuery.isLoading ? 'Cargando movimientos...' : 'Pagos registrados este mes'}
           icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
         />
         <KpiCard
           label="Socios activos"
-          value={kpis?.active_members_count ?? 0}
+          value={summaryQuery.isLoading ? '...' : (kpis?.active_members_count ?? 0)}
           subtitle={
             (kpis?.active_memberships_count ?? 0) > 0
               ? `${kpis?.active_memberships_count} membresías vigentes`
@@ -153,7 +153,7 @@ export function DashboardPage() {
         />
         <KpiCard
           label="Pagos registrados"
-          value={kpis?.monthly_payments_count ?? 0}
+          value={summaryQuery.isLoading ? '...' : (kpis?.monthly_payments_count ?? 0)}
           subtitle="Movimientos de este mes"
           icon={<TrendingUp className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
           iconBgClass="bg-[#dceefa]"

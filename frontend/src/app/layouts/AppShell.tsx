@@ -1,22 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   Apple,
+  Award,
   Clock,
   CreditCard,
   Dumbbell,
   Home,
+  LogOut,
   Menu,
-  MoreHorizontal,
   RefreshCw,
   TrendingUp,
   Users,
   X,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../features/auth/AuthContext';
 import { requestJson } from '../../shared/api/http';
 import type { HealthStatus, SingleResponse } from '../../shared/api/types';
-import { formatSpanishDateHeader } from '../../shared/utils/format';
+import { formatSpanishDateHeader, getMemberInitials } from '../../shared/utils/format';
 
 interface AppShellProps {
   clubStatus?: {
@@ -26,7 +28,7 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const NAV_ITEMS = [
+const ADMIN_NAV_ITEMS = [
   { to: '/', label: 'Resumen', icon: Home },
   { to: '/socios', label: 'Socios', icon: Users },
   { to: '/horarios', label: 'Horarios', icon: Clock },
@@ -34,6 +36,15 @@ const NAV_ITEMS = [
   { to: '/rutinas', label: 'Rutinas', icon: Dumbbell },
   { to: '/entrenamientos', label: 'Entrenamientos', icon: TrendingUp },
   { to: '/alimentacion', label: 'Alimentación', icon: Apple },
+];
+
+const MEMBER_NAV_ITEMS = [
+  { to: '/mi-espacio', label: 'Mi resumen', icon: Home },
+  { to: '/mi-espacio/membresia', label: 'Mi membresía', icon: Award },
+  { to: '/mi-espacio/horarios', label: 'Horarios y reservas', icon: Clock },
+  { to: '/mi-espacio/rutina', label: 'Mi rutina', icon: Dumbbell },
+  { to: '/mi-espacio/entrenamientos', label: 'Mis entrenamientos', icon: TrendingUp },
+  { to: '/mi-espacio/alimentacion', label: 'Mi alimentación', icon: Apple },
 ];
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -44,12 +55,26 @@ const ROUTE_TITLES: Record<string, string> = {
   '/rutinas': 'Rutinas',
   '/entrenamientos': 'Entrenamientos',
   '/alimentacion': 'Alimentación',
+  '/mi-espacio': 'Mi resumen',
+  '/mi-espacio/membresia': 'Mi membresía y pagos',
+  '/mi-espacio/horarios': 'Horarios y reservas',
+  '/mi-espacio/rutina': 'Mi rutina',
+  '/mi-espacio/entrenamientos': 'Mis entrenamientos',
+  '/mi-espacio/alimentacion': 'Mi alimentación',
 };
 
 export function AppShell({ clubStatus, children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const currentTitle = ROUTE_TITLES[location.pathname] ?? 'Resumen';
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isMemberPortal = user?.role === 'member';
+  const navItems = isMemberPortal ? MEMBER_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  const brandHref = isMemberPortal ? '/mi-espacio' : '/';
+  const currentTitle = ROUTE_TITLES[location.pathname] ?? (isMemberPortal ? 'Mi resumen' : 'Resumen');
+  const displayName = user?.member_name || user?.name || 'LOBO Club';
+  const roleLabel = isMemberPortal ? 'Socio LOBO' : 'Administración';
+  const initials = getMemberInitials(displayName);
 
   const healthQuery = useQuery({
     queryKey: ['healthz'],
@@ -74,10 +99,15 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
   const isOpen = clubStatus?.is_open ?? true;
   const hours = clubStatus?.hours ?? 'Lun a sáb · 06:00–22:00';
 
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
+
   const sidebarContent = (
     <div className="flex h-full flex-col bg-white px-[18px] pt-[29px] pb-[17px]">
       <div className="flex items-center justify-between px-[9px]">
-        <NavLink to="/" className="flex items-center gap-[11px] text-[#22251f] no-underline">
+        <NavLink to={brandHref} className="flex items-center gap-[11px] text-[#22251f] no-underline">
           <span className="font-display grid h-[39px] w-[39px] shrink-0 -rotate-4 place-items-center bg-[#d3f36b] text-[24px] leading-none font-bold text-[#22251f]">
             L
           </span>
@@ -102,15 +132,15 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
       </div>
 
       <div className="mx-[10px] mt-[38px] mb-[12px] text-[9px] font-bold tracking-[0.02em] text-[#9c9e96] uppercase">
-        MENÚ PRINCIPAL
+        {isMemberPortal ? 'PORTAL SOCIO' : 'MENÚ PRINCIPAL'}
       </div>
 
       <nav className="grid gap-[4px]" aria-label="Navegación principal">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === '/'}
+            end={to === '/' || to === '/mi-espacio'}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `flex min-h-[41px] w-full items-center gap-[12px] rounded-[3px] px-[12px] text-left text-[12px] font-semibold transition-colors ${
@@ -160,13 +190,21 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
 
         <div className="flex items-center gap-[9px] border-t border-[#e8e9e3] px-1 pt-[13px]">
           <div className="grid h-[31px] w-[31px] shrink-0 place-items-center rounded-full bg-[#22251f] text-[10px] font-bold text-[#d3f36b]">
-            LC
+            {initials}
           </div>
-          <span className="grid gap-[3px] text-[10px]">
-            <strong className="font-bold text-[#22251f]">LOBO Club</strong>
-            <small className="text-[9px] text-[#85877f]">Administración</small>
+          <span className="grid min-w-0 gap-[3px] text-[10px]">
+            <strong className="truncate font-bold text-[#22251f]">{displayName}</strong>
+            <small className="text-[9px] text-[#85877f]">{roleLabel}</small>
           </span>
-          <MoreHorizontal className="ml-auto h-4 w-4 text-[#93958c]" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            className="ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-[3px] border border-[#e8e9e3] text-[#686b63] hover:bg-[#f5f6f1] hover:text-[#22251f]"
+          >
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </div>
@@ -214,9 +252,9 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
             </span>
             <span
               className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full bg-[#ff8068] text-[10px] font-bold text-[#22251f] sm:h-[31px] sm:w-[31px]"
-              title="LOBO Club Administración"
+              title={`${displayName} · ${roleLabel}`}
             >
-              LC
+              {initials}
             </span>
           </div>
         </header>

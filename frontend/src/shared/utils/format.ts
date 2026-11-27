@@ -4,6 +4,7 @@ import type {
   MemberStatus,
   NutritionGoal,
   PaymentMethod,
+  PaymentStatus,
   RoutineGoal,
   WorkoutLevel,
 } from '../api/types';
@@ -37,6 +38,16 @@ const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export function getPaymentMethodLabel(method: PaymentMethod): string {
   return PAYMENT_METHOD_LABELS[method] ?? method;
+}
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  paid: 'Pagado',
+  pending: 'En revisión',
+  rejected: 'Rechazado',
+};
+
+export function getPaymentStatusLabel(status?: PaymentStatus): string {
+  return status ? (PAYMENT_STATUS_LABELS[status] ?? status) : 'Pagado';
 }
 
 const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
