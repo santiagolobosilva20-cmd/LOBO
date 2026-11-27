@@ -43,6 +43,13 @@ final readonly class WorkoutController
             ->setStatusCode(201);
     }
 
+    public function update(StoreWorkoutRequest $request, int $workoutId): JsonResponse
+    {
+        $workout = $this->workoutService->update($workoutId, $request->toDto());
+
+        return (new WorkoutResource($workout))->response();
+    }
+
     public function destroy(int $workoutId): JsonResponse
     {
         $this->workoutService->delete($workoutId);

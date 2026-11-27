@@ -6,6 +6,7 @@ namespace Modules\Dashboard\Application\DTOs;
 
 use Modules\Billing\Contracts\DTOs\MonthlyBillingStatsData;
 use Modules\Billing\Contracts\DTOs\PaymentSummaryData;
+use Modules\Memberships\Contracts\DTOs\MembershipStatsData;
 use Modules\Scheduling\Contracts\DTOs\ClassSessionSummaryData;
 
 final readonly class DashboardSummaryData
@@ -17,6 +18,7 @@ final readonly class DashboardSummaryData
     public function __construct(
         public MonthlyBillingStatsData $billing,
         public int $activeMembersCount,
+        public MembershipStatsData $membershipStats,
         public ?ClassSessionSummaryData $nextSession,
         public array $recentPayments,
         public array $featuredSessions,

@@ -71,6 +71,41 @@ final readonly class WorkoutService
         });
     }
 
+    #[\NoDiscard]
+    public function update(int $id, CreateWorkoutData $data): WorkoutSummaryData
+    {
+        $normalizedName = trim((string) preg_replace('/\s+/', ' ', $data->name));
+        $slug = Str::slug($normalizedName);
+
+        return DB::transaction(function () use ($id, $normalizedName, $slug, $data): WorkoutSummaryData {
+            $workout = $this->workouts->findById($id);
+            if ($workout === null) {
+                throw new ResourceNotFoundException('Workout', $id);
+            }
+
+            if ($this->workouts->existsBySlug($slug, $id)) {
+                throw new ConflictException(
+                    message: sprintf('A workout named [%s] already exists.', $normalizedName),
+                    errors: ['name' => ['The workout name is already registered.']],
+                );
+            }
+
+            $workout->fill([
+                'name' => $normalizedName,
+                'slug' => $slug,
+                'category' => trim($data->category),
+                'level' => $data->level,
+                'default_duration_minutes' => $data->defaultDurationMinutes,
+                'badge_label' => strtoupper(trim($data->badgeLabel)),
+                'image_url' => $data->imageUrl,
+                'display_order' => $data->displayOrder,
+                'description' => $data->description !== null ? trim($data->description) : null,
+            ]);
+
+            return $this->toSummary($this->workouts->save($workout));
+        });
+    }
+
     public function delete(int $id): void
     {
         DB::transaction(function () use ($id): void {

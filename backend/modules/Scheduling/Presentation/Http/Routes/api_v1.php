@@ -11,6 +11,7 @@ use Modules\Scheduling\Presentation\Http\Controllers\WorkoutController;
 Route::prefix('workouts')->group(function (): void {
     Route::get('/', [WorkoutController::class, 'index'])->name('api.v1.workouts.index');
     Route::post('/', [WorkoutController::class, 'store'])->name('api.v1.workouts.store');
+    Route::patch('/{workoutId}', [WorkoutController::class, 'update'])->whereNumber('workoutId')->name('api.v1.workouts.update');
     Route::delete('/{workoutId}', [WorkoutController::class, 'destroy'])->whereNumber('workoutId')->name('api.v1.workouts.destroy');
 });
 
