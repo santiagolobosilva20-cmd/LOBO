@@ -1,6 +1,7 @@
 import { Apple, ArrowRight, Award, Calendar, Clock, Dumbbell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { KpiCard } from '../../shared/components/KpiCard';
+import { FeaturedSessionsSkeleton, SkeletonBlock } from '../../shared/components/Skeletons';
 import {
   formatWeekdayProgressLabel,
   getMembershipStatusLabel,
@@ -71,14 +72,14 @@ export function MemberOverviewPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               to="/mi-espacio/horarios"
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[11px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
+              className="lobo-pressable inline-flex min-h-[40px] items-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[11px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
             >
               <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
               Reservar clase
             </Link>
             <Link
               to="/mi-espacio/membresia"
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-[3px] border border-white/25 bg-black/45 px-4 text-[11px] font-bold text-white hover:bg-white hover:text-[#22251f]"
+              className="lobo-pressable inline-flex min-h-[40px] items-center gap-2 rounded-[3px] border border-white/25 bg-black/45 px-4 text-[11px] font-bold text-white hover:bg-white hover:text-[#22251f]"
             >
               Ver membresía
             </Link>
@@ -99,71 +100,51 @@ export function MemberOverviewPage() {
 
       <div className="grid grid-cols-1 gap-[15px] sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
+          index={0}
+          loading={membershipsQuery.isLoading}
           label="Membresía"
-          value={
-            membershipsQuery.isLoading
-              ? '...'
-              : activeMembership
-                ? getMembershipStatusLabel(activeMembership.status)
-                : 'Sin plan'
-          }
+          value={activeMembership ? getMembershipStatusLabel(activeMembership.status) : 'Sin plan'}
           subtitle={
-            membershipsQuery.isLoading
-              ? 'Cargando membresía...'
-              : activeMembership
-                ? `${activeMembership.plan_name} · ${activeMembership.days_remaining} días rest.`
-                : 'Solicita un plan en Mi membresía'
+            activeMembership
+              ? `${activeMembership.plan_name} · ${activeMembership.days_remaining} días rest.`
+              : 'Solicita un plan en Mi membresía'
           }
           icon={<Award className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
         />
         <KpiCard
+          index={1}
+          loading={scheduleQuery.isLoading}
           label="Clases reservadas"
-          value={scheduleQuery.isLoading ? '...' : String(bookedSessions.length)}
+          value={String(bookedSessions.length)}
           subtitle={
-            scheduleQuery.isLoading
-              ? 'Cargando reservas...'
-              : bookedSessions[0]
-                ? `Próxima: ${bookedSessions[0].day_label} ${bookedSessions[0].start_time_label}`
-                : 'Reserva desde Horarios'
+            bookedSessions[0]
+              ? `Próxima: ${bookedSessions[0].day_label} ${bookedSessions[0].start_time_label}`
+              : 'Reserva desde Horarios'
           }
           icon={<Clock className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#dceefa]"
         />
         <KpiCard
+          index={2}
+          loading={routinesQuery.isLoading}
           label="Rutina asignada"
-          value={
-            routinesQuery.isLoading
-              ? '...'
-              : primaryRoutine
-                ? `${primaryRoutine.days_per_week} días`
-                : 'Plantillas'
-          }
+          value={primaryRoutine ? `${primaryRoutine.days_per_week} días` : 'Plantillas'}
           subtitle={
-            routinesQuery.isLoading
-              ? 'Cargando rutina...'
-              : primaryRoutine
-                ? primaryRoutine.title
-                : 'Revisa plantillas disponibles del club'
+            primaryRoutine ? primaryRoutine.title : 'Revisa plantillas disponibles del club'
           }
           icon={<Dumbbell className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#ffe0d8]"
         />
         <KpiCard
+          index={3}
+          loading={nutritionQuery.isLoading}
           label="Meta nutricional"
-          value={
-            nutritionQuery.isLoading
-              ? '...'
-              : primaryNutrition
-                ? `${primaryNutrition.daily_calories} kcal`
-                : 'Sin asignar'
-          }
+          value={primaryNutrition ? `${primaryNutrition.daily_calories} kcal` : 'Sin asignar'}
           subtitle={
-            nutritionQuery.isLoading
-              ? 'Cargando nutrición...'
-              : primaryNutrition
-                ? `${primaryNutrition.protein_grams}P · ${primaryNutrition.carbs_grams}C · ${primaryNutrition.fats_grams}G`
-                : 'Consulta planes alimenticios del club'
+            primaryNutrition
+              ? `${primaryNutrition.protein_grams}P · ${primaryNutrition.carbs_grams}C · ${primaryNutrition.fats_grams}G`
+              : 'Consulta planes alimenticios del club'
           }
           icon={<Apple className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
@@ -178,7 +159,11 @@ export function MemberOverviewPage() {
                 PLAN DE ENTRENAMIENTO
               </span>
               <h3 className="font-display mt-0.5 text-[16px] font-semibold text-[#22251f]">
-                {primaryRoutine ? primaryRoutine.title : 'Explora tu rutina y entrenamientos'}
+                {routinesQuery.isLoading
+                  ? 'Cargando tu rutina...'
+                  : primaryRoutine
+                    ? primaryRoutine.title
+                    : 'Explora tu rutina y entrenamientos'}
               </h3>
             </div>
             <Link
@@ -190,9 +175,13 @@ export function MemberOverviewPage() {
           </div>
 
           {isOverviewLoading ? (
-            <p className="py-8 text-center text-[10px] text-[#73756e]">
-              Cargando tu rutina y progreso...
-            </p>
+            <div className="mt-3" role="status" aria-busy="true" aria-label="Cargando rutina">
+              <div className="mb-3 flex gap-2">
+                <SkeletonBlock className="h-4 w-20" />
+                <SkeletonBlock className="h-4 w-24" />
+              </div>
+              <FeaturedSessionsSkeleton count={4} />
+            </div>
           ) : primaryRoutine ? (
             <div className="mt-3 space-y-2">
               <div className="flex items-center gap-2 text-[9px] font-bold text-[#686b63] uppercase">
@@ -250,7 +239,12 @@ export function MemberOverviewPage() {
             </Link>
           </div>
 
-          {primaryNutrition ? (
+          {nutritionQuery.isLoading ? (
+            <div className="mt-3 rounded-[3px] border border-[#eceee7] bg-[#f8f9f5] p-3">
+              <SkeletonBlock className="h-3.5 w-44" />
+              <SkeletonBlock className="mt-2 h-2.5 w-56" />
+            </div>
+          ) : primaryNutrition ? (
             <div className="mt-3 rounded-[3px] border border-[#eceee7] bg-[#f8f9f5] p-3 text-[10px]">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-[#22251f]">{primaryNutrition.title}</span>
@@ -267,7 +261,9 @@ export function MemberOverviewPage() {
           ) : null}
 
           <div className="mt-3 divide-y divide-[#f0f1ec]">
-            {recentLogs.length > 0 ? (
+            {logsQuery.isLoading ? (
+              <FeaturedSessionsSkeleton count={3} />
+            ) : recentLogs.length > 0 ? (
               recentLogs.map((log) => (
                 <div
                   key={log.id}

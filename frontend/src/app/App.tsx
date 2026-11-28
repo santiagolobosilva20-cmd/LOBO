@@ -15,6 +15,7 @@ import { PlansPage } from '../features/plans/PlansPage';
 import { RoutinesPage } from '../features/routines/RoutinesPage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
 import { WorkoutsPage } from '../features/workouts/WorkoutsPage';
+import { AppHydrationSkeleton } from '../shared/components/Skeletons';
 import { ToastProvider } from '../shared/components/ToastContext';
 import { AppShell } from './layouts/AppShell';
 
@@ -31,11 +32,7 @@ export function AppRoutes() {
   const { user, isHydrating } = useAuth();
 
   if (isHydrating) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-[#f3f4ef] text-[11px] font-semibold text-[#686b63]">
-        Verificando sesión en LOBO Club...
-      </div>
-    );
+    return <AppHydrationSkeleton />;
   }
 
   if (!user) {

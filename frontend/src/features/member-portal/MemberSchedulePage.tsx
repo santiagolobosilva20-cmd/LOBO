@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiError, requestJson } from '../../shared/api/http';
 import type { ClassSessionItem, SingleResponse } from '../../shared/api/types';
+import { DetailCardsGridSkeleton, staggerStyle } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import { useMemberScheduleQuery } from './memberQueries';
 
@@ -79,19 +80,21 @@ export function MemberSchedulePage() {
       </div>
 
       {scheduleQuery.isLoading ? (
-        <div className="rounded-[3px] border border-[#e7e8e2] bg-white p-10 text-center text-[10px] text-[#73756e]">
-          Cargando horarios disponibles...
-        </div>
+        <DetailCardsGridSkeleton variant="schedule" count={6} />
       ) : (
         <div className="grid grid-cols-1 gap-[15px] md:grid-cols-2">
-          {DAYS.map(({ day, name }) => {
+          {DAYS.map(({ day, name }, dayIdx) => {
             const sessions = visibleSessions.filter((s) => s.day_of_week === day);
             if (onlyMine && sessions.length === 0) {
               return null;
             }
 
             return (
-              <section key={day} className="rounded-[3px] border border-[#e7e8e2] bg-white p-[18px]">
+              <section
+                key={day}
+                style={staggerStyle(dayIdx)}
+                className="lobo-stagger-item rounded-[3px] border border-[#e7e8e2] bg-white p-[18px]"
+              >
                 <h2 className="font-display border-b border-[#f0f1ec] pb-2.5 text-[15px] font-semibold text-[#22251f]">
                   {name}
                 </h2>

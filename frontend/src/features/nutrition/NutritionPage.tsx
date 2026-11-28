@@ -11,6 +11,7 @@ import type {
   SingleResponse,
 } from '../../shared/api/types';
 import { AssignMemberModal } from '../../shared/components/AssignMemberModal';
+import { DetailCardsGridSkeleton, staggerStyle } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import { getMealSlotLabel, getNutritionGoalLabel } from '../../shared/utils/format';
 
@@ -239,7 +240,7 @@ export function NutritionPage() {
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+          className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] hover:bg-[#c5eb50]"
         >
           <span className="text-[15px] leading-none">＋</span> Nuevo plan nutricional
         </button>
@@ -293,9 +294,7 @@ export function NutritionPage() {
       </div>
 
       {plansQuery.isLoading ? (
-        <div className="rounded-[3px] border border-[#e7e8e2] bg-white py-12 text-center text-[11px] text-[#73756e]">
-          Cargando planes alimenticios...
-        </div>
+        <DetailCardsGridSkeleton variant="nutrition" count={2} />
       ) : plans.length === 0 ? (
         <div className="rounded-[3px] border border-[#e7e8e2] bg-white px-5 py-12 text-center text-[#73756e]">
           <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
@@ -305,14 +304,14 @@ export function NutritionPage() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex min-h-[39px] items-center justify-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white"
           >
             Crear plan nutricional
           </button>
         </div>
       ) : (
         <section className="grid grid-cols-1 gap-[14px] lg:grid-cols-2">
-          {plans.map((plan) => {
+          {plans.map((plan, idx) => {
             const totalMacroGrams = Math.max(
               1,
               plan.protein_grams + plan.carbs_grams + plan.fats_grams,
@@ -324,7 +323,8 @@ export function NutritionPage() {
             return (
               <article
                 key={plan.id}
-                className="flex flex-col justify-between overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white"
+                style={staggerStyle(idx)}
+                className="lobo-stagger-item flex flex-col justify-between overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 px-[18px] pt-[18px] pb-3">
@@ -435,14 +435,14 @@ export function NutritionPage() {
       {formOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setFormOpen(false);
               }}
             >
-              <div className="max-h-[90vh] w-[min(640px,100%)] overflow-y-auto rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter max-h-[90vh] w-[min(640px,100%)] overflow-y-auto rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <div className="mb-5 flex items-start justify-between">
                   <div>
                     <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">

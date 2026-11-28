@@ -3,6 +3,7 @@ import { Clock, Sparkles, Users } from 'lucide-react';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/http';
 import type { PaginatedResponse, PlanItem } from '../../shared/api/types';
+import { DetailCardsGridSkeleton, staggerStyle } from '../../shared/components/Skeletons';
 import { RegisterPaymentModal } from '../billing/RegisterPaymentModal';
 
 const DEFAULT_PLANS: PlanItem[] = [
@@ -90,32 +91,36 @@ export function PlansPage() {
         <button
           type="button"
           onClick={() => openModalForPlan(null)}
-          className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+          className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] hover:bg-[#c5eb50]"
         >
           <span className="text-[15px] leading-none">＋</span> Registrar ingreso
         </button>
       </div>
 
-      <section className="grid grid-cols-1 gap-[14px] lg:grid-cols-3">
-        {plans.map((plan, index) => {
-          const isDark = plan.is_featured;
-          const IconComponent = isDark ? Sparkles : index === 0 ? Clock : Users;
-          const symbolBg = isDark
-            ? 'bg-[#d3f36b]'
-            : index % 3 === 2
-              ? 'bg-[#dceefa]'
-              : 'bg-[#eef5d9]';
+      {plansQuery.isLoading ? (
+        <DetailCardsGridSkeleton variant="plan" count={3} />
+      ) : (
+        <section className="grid grid-cols-1 gap-[14px] lg:grid-cols-3">
+          {plans.map((plan, index) => {
+            const isDark = plan.is_featured;
+            const IconComponent = isDark ? Sparkles : index === 0 ? Clock : Users;
+            const symbolBg = isDark
+              ? 'bg-[#d3f36b]'
+              : index % 3 === 2
+                ? 'bg-[#dceefa]'
+                : 'bg-[#eef5d9]';
 
-          return (
-            <article
-              key={plan.id}
-              onClick={() => openModalForPlan(plan.id)}
-              className={`relative min-h-[300px] cursor-pointer border p-[21px] transition-colors md:min-h-[332px] ${
-                isDark
-                  ? 'border-[#242820] bg-[#252922] text-white'
-                  : 'border-[#e7e8e2] bg-white text-[#22251f] hover:border-[#d5d7cf]'
-              }`}
-            >
+            return (
+              <article
+                key={plan.id}
+                style={staggerStyle(index)}
+                onClick={() => openModalForPlan(plan.id)}
+                className={`lobo-stagger-item lobo-card-interactive relative min-h-[300px] cursor-pointer border p-[21px] md:min-h-[332px] ${
+                  isDark
+                    ? 'border-[#242820] bg-[#252922] text-white'
+                    : 'border-[#e7e8e2] bg-white text-[#22251f] hover:border-[#d5d7cf]'
+                }`}
+              >
               <span
                 className={`block text-[8px] font-bold uppercase ${
                   isDark ? 'text-[#d3f36b]' : 'text-[#898b83]'
@@ -177,7 +182,8 @@ export function PlansPage() {
             </article>
           );
         })}
-      </section>
+        </section>
+      )}
 
       <p className="mt-[13px] text-[9px] text-[#999b93]">
         Registra el pago de cada socio desde &ldquo;Registrar ingreso&rdquo;.

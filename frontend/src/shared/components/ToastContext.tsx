@@ -38,8 +38,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         role="status"
         aria-live="polite"
-        className={`fixed right-[23px] bottom-[23px] z-50 border-l-[3px] border-[#d3f36b] bg-[#22251f] px-4 py-3 text-[11px] font-medium text-white shadow-lg transition-all duration-200 ${
-          visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
+        className={`fixed right-[23px] bottom-[23px] z-50 border-l-[3px] border-[#d3f36b] bg-[#22251f] px-4 py-3 text-[11px] font-medium text-white shadow-lg transition-[opacity,transform] duration-250 ease-out ${
+          visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
         }`}
       >
         {message}

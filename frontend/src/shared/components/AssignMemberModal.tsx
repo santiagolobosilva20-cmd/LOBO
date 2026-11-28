@@ -44,14 +44,14 @@ export function AssignMemberModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+      className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[min(400px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+      <div className="lobo-modal-enter w-[min(400px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
         <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">{eyebrow}</span>
         <h2 className="font-display mt-1 text-[20px] font-semibold text-[#22251f]">{title}</h2>
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">

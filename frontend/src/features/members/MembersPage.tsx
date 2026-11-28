@@ -15,6 +15,7 @@ import type {
   SingleResponse,
 } from '../../shared/api/types';
 import { KpiCard } from '../../shared/components/KpiCard';
+import { TableSkeleton } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import {
   getMemberInitials,
@@ -259,14 +260,14 @@ export function MembersPage() {
           <button
             type="button"
             onClick={() => setMembershipModalOpen(true)}
-            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] hover:bg-[#c5eb50]"
           >
             <span className="text-[15px] leading-none">＋</span> Asignar membresía
           </button>
           <button
             type="button"
             onClick={() => setPaymentModalOpen(true)}
-            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white hover:bg-[#3b4037]"
           >
             <span className="text-[15px] leading-none">＋</span> Registrar ingreso
           </button>
@@ -275,22 +276,28 @@ export function MembersPage() {
 
       <div className="mb-[14px] grid grid-cols-2 gap-[12px] md:grid-cols-3 lg:max-w-[700px]">
         <KpiCard
+          index={0}
+          loading={membershipsQuery.isLoading}
           label="Membresías activas"
-          value={membershipsQuery.isLoading ? '...' : (membershipStats?.active_count ?? 0)}
+          value={membershipStats?.active_count ?? 0}
           subtitle={`${membershipStats?.expiring_soon_count ?? 0} por vencer en ≤7 días`}
           icon={<Award className="h-[13px] w-[13px] stroke-[2] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
         />
         <KpiCard
+          index={1}
+          loading={paymentsQuery.isLoading}
           label="Socios registrados"
-          value={paymentsQuery.isLoading ? '...' : (billingStats?.distinct_members_count ?? members.length)}
+          value={billingStats?.distinct_members_count ?? members.length}
           subtitle="Comunidad en Neon DB"
           icon={<Users className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
           iconBgClass="bg-[#ffe0d8]"
         />
         <KpiCard
+          index={2}
+          loading={paymentsQuery.isLoading}
           label="Ingresos acumulados"
-          value={paymentsQuery.isLoading ? '...' : (billingStats?.formatted_total_revenue ?? '$0.00')}
+          value={billingStats?.formatted_total_revenue ?? '$0.00'}
           subtitle="Todos los movimientos"
           icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#dceefa]"
@@ -394,8 +401,11 @@ export function MembersPage() {
           </div>
 
           {activeTab === 'memberships' ? (
-            <>
-              <div className="w-full overflow-x-auto">
+            membershipsQuery.isLoading ? (
+              <TableSkeleton rows={5} cols={6} />
+            ) : (
+              <>
+                <div className="w-full overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead className="bg-[#f8f9f5]">
                     <tr>
@@ -509,24 +519,24 @@ export function MembersPage() {
                   </tbody>
                 </table>
               </div>
-              {membershipsQuery.isLoading ? (
-                <p className="py-10 text-center text-[10px] text-[#73756e]">
-                  Consultando membresías...
-                </p>
-              ) : memberships.length === 0 ? (
-                <div className="px-5 py-[35px] text-center text-[#73756e]">
-                  <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
-                    Sin membresías registradas
-                  </strong>
-                  <p className="mt-1.5 text-[10px]">
-                    Asigna una membresía o registra un pago para activar automáticamente a un socio.
-                  </p>
-                </div>
-              ) : null}
-            </>
+                {memberships.length === 0 ? (
+                  <div className="px-5 py-[35px] text-center text-[#73756e]">
+                    <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
+                      Sin membresías registradas
+                    </strong>
+                    <p className="mt-1.5 text-[10px]">
+                      Asigna una membresía o registra un pago para activar automáticamente a un socio.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )
           ) : activeTab === 'members' ? (
-            <>
-              <div className="w-full overflow-x-auto">
+            membersQuery.isLoading ? (
+              <TableSkeleton rows={5} cols={5} />
+            ) : (
+              <>
+                <div className="w-full overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead className="bg-[#f8f9f5]">
                     <tr>
@@ -590,16 +600,17 @@ export function MembersPage() {
                   </tbody>
                 </table>
               </div>
-              {membersQuery.isLoading ? (
-                <p className="py-10 text-center text-[10px] text-[#73756e]">Consultando socios...</p>
-              ) : members.length === 0 ? (
-                <div className="px-5 py-[35px] text-center text-[#73756e]">
-                  <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
-                    No hay socios registrados
-                  </strong>
-                </div>
-              ) : null}
-            </>
+                {members.length === 0 ? (
+                  <div className="px-5 py-[35px] text-center text-[#73756e]">
+                    <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
+                      No hay socios registrados
+                    </strong>
+                  </div>
+                ) : null}
+              </>
+            )
+          ) : paymentsQuery.isLoading ? (
+            <TableSkeleton rows={5} cols={7} />
           ) : (
             <>
               <PaymentsTable
@@ -612,9 +623,7 @@ export function MembersPage() {
                 onApprove={(id) => paymentReviewMutation.mutate({ id, decision: 'approve' })}
                 onReject={(id) => paymentReviewMutation.mutate({ id, decision: 'reject' })}
               />
-              {paymentsQuery.isLoading ? (
-                <p className="py-10 text-center text-[10px] text-[#73756e]">Consultando historial...</p>
-              ) : payments.length === 0 ? (
+              {payments.length === 0 ? (
                 <div className="px-5 py-[35px] text-center text-[#73756e]">
                   <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
                     No hay resultados
@@ -662,14 +671,14 @@ export function MembersPage() {
       {membershipModalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setMembershipModalOpen(false);
               }}
             >
-              <div className="w-[min(420px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(420px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <div className="mb-5 flex items-start justify-between">
                   <div>
                     <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
@@ -756,14 +765,14 @@ export function MembersPage() {
       {memberModalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setMemberModalOpen(false);
               }}
             >
-              <div className="w-[min(400px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(400px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">NUEVO SOCIO</span>
                 <h2 className="font-display mt-1 text-[21px] font-semibold text-[#22251f]">
                   Registrar socio

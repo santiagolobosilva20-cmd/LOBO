@@ -10,6 +10,7 @@ import type {
   WorkoutLevel,
   WorkoutLogItem,
 } from '../../shared/api/types';
+import { DetailCardsGridSkeleton, staggerStyle, TableSkeleton } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import { getMemberInitials } from '../../shared/utils/format';
 
@@ -240,30 +241,34 @@ export function WorkoutsPage() {
           <button
             type="button"
             onClick={() => openLogForWorkout()}
-            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] hover:bg-[#c5eb50]"
           >
             <span className="text-[15px] leading-none">＋</span> Registrar sesión
           </button>
           <button
             type="button"
             onClick={() => openDisciplineModal(null)}
-            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white hover:bg-[#3b4037]"
           >
             <span className="text-[15px] leading-none">＋</span> Nueva disciplina
           </button>
         </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
-        {workouts.map((workout, idx) => {
-          const orderNum = String(workout.display_order || idx + 1).padStart(2, '0');
-          const imgSrc = workout.image_url || DEFAULT_WORKOUTS[idx % DEFAULT_WORKOUTS.length].image_url!;
+      {workoutsQuery.isLoading ? (
+        <DetailCardsGridSkeleton variant="workout" count={4} />
+      ) : (
+        <section className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
+          {workouts.map((workout, idx) => {
+            const orderNum = String(workout.display_order || idx + 1).padStart(2, '0');
+            const imgSrc = workout.image_url || DEFAULT_WORKOUTS[idx % DEFAULT_WORKOUTS.length].image_url!;
 
-          return (
-            <article
-              key={workout.id}
-              className="group relative flex min-h-[205px] items-end overflow-hidden bg-[#181c17] p-[21px] text-white sm:min-h-[226px]"
-            >
+            return (
+              <article
+                key={workout.id}
+                style={staggerStyle(idx)}
+                className="lobo-stagger-item lobo-card-interactive group relative flex min-h-[205px] items-end overflow-hidden bg-[#181c17] p-[21px] text-white sm:min-h-[226px]"
+              >
               <img
                 src={imgSrc}
                 alt={workout.name}
@@ -314,9 +319,10 @@ export function WorkoutsPage() {
                 </div>
               </div>
             </article>
-          );
-        })}
-      </section>
+            );
+          })}
+        </section>
+      )}
 
       <div className="mt-[18px] overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white">
         <div className="flex min-h-[70px] items-center justify-between gap-3 px-[18px] py-[14px]">
@@ -329,12 +335,16 @@ export function WorkoutsPage() {
             </h2>
           </div>
           <span className="text-[9px] font-semibold text-[#85877f]">
-            {logs.length} sesiones recientes
+            {logsQuery.isLoading ? 'Cargando...' : `${logs.length} sesiones recientes`}
           </span>
         </div>
 
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+        {logsQuery.isLoading ? (
+          <TableSkeleton rows={4} cols={5} />
+        ) : (
+          <>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full border-collapse text-left">
             <thead className="bg-[#f8f9f5]">
               <tr>
                 <th className="px-[13px] py-[10px] text-[8px] font-bold text-[#92948c] uppercase">
@@ -400,29 +410,31 @@ export function WorkoutsPage() {
           </table>
         </div>
 
-        {logs.length === 0 ? (
-          <div className="px-5 py-9 text-center text-[#73756e]">
-            <strong className="font-display block text-[13px] font-semibold text-[#22251f]">
-              Aún no hay sesiones registradas
-            </strong>
-            <p className="mt-1 text-[10px]">
-              Pulsa &ldquo;Registrar sesión&rdquo; para llevar el seguimiento de cada socio.
-            </p>
-          </div>
-        ) : null}
+            {logs.length === 0 ? (
+              <div className="px-5 py-9 text-center text-[#73756e]">
+                <strong className="font-display block text-[13px] font-semibold text-[#22251f]">
+                  Aún no hay sesiones registradas
+                </strong>
+                <p className="mt-1 text-[10px]">
+                  Pulsa &ldquo;Registrar sesión&rdquo; para llevar el seguimiento de cada socio.
+                </p>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
 
       {logModalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setLogModalOpen(false);
               }}
             >
-              <div className="w-[min(460px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(460px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
                   BITÁCORA LOBO
                 </span>
@@ -555,14 +567,14 @@ export function WorkoutsPage() {
       {disciplineModalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setDisciplineModalOpen(false);
               }}
             >
-              <div className="w-[min(440px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(440px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
                   CATÁLOGO DE DISCIPLINAS
                 </span>

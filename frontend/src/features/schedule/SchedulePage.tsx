@@ -8,6 +8,7 @@ import type {
   SingleResponse,
   WorkoutItem,
 } from '../../shared/api/types';
+import { DetailCardsGridSkeleton, staggerStyle } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 
 interface DayScheduleCard {
@@ -210,7 +211,7 @@ export function SchedulePage() {
         <button
           type="button"
           onClick={() => setAddModalOpen(true)}
-          className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
+          className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white hover:bg-[#3b4037]"
         >
           <span className="text-[15px] leading-none">＋</span> Agregar clase
         </button>
@@ -234,63 +235,70 @@ export function SchedulePage() {
         </div>
       </section>
 
-      <section className="mt-[15px] grid grid-cols-1 gap-[12px] md:grid-cols-2 xl:grid-cols-3">
-        {days.map((day) => (
-          <article
-            key={day.day}
-            className="border border-[#e7e8e2] bg-white px-[17px] pt-[17px] pb-[8px]"
-          >
-            <h3 className="font-display mb-[9px] text-[13px] font-semibold text-[#22251f]">
-              {day.label}
-            </h3>
-            <div>
-              {day.sessions.map((session, idx) => (
-                <div
-                  key={session.id ?? `${day.day}-${idx}`}
-                  className="group flex min-h-[49px] items-center gap-[10px] border-t border-[#eff0eb]"
-                >
-                  <time className="tabular-nums w-[42px] shrink-0 text-[9px] text-[#76786f]">
-                    {session.time}
-                  </time>
-                  <div className="min-w-0 flex-1">
-                    <strong className="block text-[10px] font-bold text-[#22251f]">
-                      {session.name}
-                    </strong>
-                    <small className="mt-[3px] block text-[8px] text-[#9b9d95]">
-                      {session.meta}
-                    </small>
+      {sessionsQuery.isLoading ? (
+        <div className="mt-[15px]">
+          <DetailCardsGridSkeleton variant="schedule" count={6} />
+        </div>
+      ) : (
+        <section className="mt-[15px] grid grid-cols-1 gap-[12px] md:grid-cols-2 xl:grid-cols-3">
+          {days.map((day, dayIdx) => (
+            <article
+              key={day.day}
+              style={staggerStyle(dayIdx)}
+              className="lobo-stagger-item border border-[#e7e8e2] bg-white px-[17px] pt-[17px] pb-[8px]"
+            >
+              <h3 className="font-display mb-[9px] text-[13px] font-semibold text-[#22251f]">
+                {day.label}
+              </h3>
+              <div>
+                {day.sessions.map((session, idx) => (
+                  <div
+                    key={session.id ?? `${day.day}-${idx}`}
+                    className="group flex min-h-[49px] items-center gap-[10px] border-t border-[#eff0eb]"
+                  >
+                    <time className="tabular-nums w-[42px] shrink-0 text-[9px] text-[#76786f]">
+                      {session.time}
+                    </time>
+                    <div className="min-w-0 flex-1">
+                      <strong className="block text-[10px] font-bold text-[#22251f]">
+                        {session.name}
+                      </strong>
+                      <small className="mt-[3px] block text-[8px] text-[#9b9d95]">
+                        {session.meta}
+                      </small>
+                    </div>
+                    {session.id !== undefined && session.capacity !== undefined ? (
+                      <button
+                        type="button"
+                        disabled={
+                          enrollMutation.isPending || (session.enrolled ?? 0) >= session.capacity
+                        }
+                        onClick={() => enrollMutation.mutate(session.id!)}
+                        title="Reservar cupo (+1)"
+                        className="tabular-nums rounded-[3px] px-1.5 py-0.5 text-[9px] font-medium text-[#9b9d95] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#d3f36b] hover:text-[#22251f] focus:opacity-100 disabled:opacity-40"
+                      >
+                        {session.enrolled}/{session.capacity}
+                      </button>
+                    ) : null}
                   </div>
-                  {session.id !== undefined && session.capacity !== undefined ? (
-                    <button
-                      type="button"
-                      disabled={
-                        enrollMutation.isPending || (session.enrolled ?? 0) >= session.capacity
-                      }
-                      onClick={() => enrollMutation.mutate(session.id!)}
-                      title="Reservar cupo (+1)"
-                      className="tabular-nums rounded-[3px] px-1.5 py-0.5 text-[9px] font-medium text-[#9b9d95] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#d3f36b] hover:text-[#22251f] focus:opacity-100 disabled:opacity-40"
-                    >
-                      {session.enrolled}/{session.capacity}
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </article>
-        ))}
-      </section>
+                ))}
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
 
       {addModalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setAddModalOpen(false);
               }}
             >
-              <div className="w-[min(420px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(420px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">
                   AGENDA LOBO
                 </span>

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { ApiError, requestJson } from '../../shared/api/http';
 import type { PaymentItem, PaymentMethod, SingleResponse } from '../../shared/api/types';
+import { MembershipCardSkeleton, TableSkeleton } from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import { getMembershipStatusLabel } from '../../shared/utils/format';
 import { PaymentsTable } from '../billing/PaymentsTable';
@@ -94,18 +95,16 @@ export function MemberMembershipPage() {
         <button
           type="button"
           onClick={() => setRequestOpen(true)}
-          className="inline-flex min-h-[39px] items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[10px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
+          className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[10px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
         >
           <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
           Solicitar renovación / pago
         </button>
       </div>
 
-      <section className="rounded-[3px] border border-[#e7e8e2] bg-white p-5">
+      <section className="lobo-stagger-item rounded-[3px] border border-[#e7e8e2] bg-white p-5">
         {membershipsQuery.isLoading ? (
-          <p className="py-6 text-center text-[10px] text-[#73756e]">
-            Consultando tu membresía...
-          </p>
+          <MembershipCardSkeleton />
         ) : activeMembership ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -163,30 +162,31 @@ export function MemberMembershipPage() {
           </h2>
         </div>
 
-        <PaymentsTable payments={payments} />
-
         {paymentsQuery.isLoading ? (
-          <p className="py-10 text-center text-[10px] text-[#73756e]">
-            Consultando historial personal...
-          </p>
-        ) : payments.length === 0 ? (
-          <p className="py-10 text-center text-[10px] text-[#73756e]">
-            No tienes pagos ni solicitudes registradas.
-          </p>
-        ) : null}
+          <TableSkeleton rows={3} cols={6} />
+        ) : (
+          <>
+            <PaymentsTable payments={payments} />
+            {payments.length === 0 ? (
+              <p className="py-10 text-center text-[10px] text-[#73756e]">
+                No tienes pagos ni solicitudes registradas.
+              </p>
+            ) : null}
+          </>
+        )}
       </section>
 
       {requestOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setRequestOpen(false);
               }}
             >
-              <div className="w-[min(430px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(430px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <div className="mb-4 flex items-start justify-between">
                   <div>
                     <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">

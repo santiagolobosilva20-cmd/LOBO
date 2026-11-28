@@ -4,6 +4,11 @@ import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { ApiError, requestJson } from '../../shared/api/http';
 import type { SingleResponse, WorkoutItem, WorkoutLogItem } from '../../shared/api/types';
+import {
+  DetailCardsGridSkeleton,
+  staggerStyle,
+  TableSkeleton,
+} from '../../shared/components/Skeletons';
 import { useToast } from '../../shared/components/ToastContext';
 import { useClubWorkoutsQuery, useMemberWorkoutLogsQuery } from './memberQueries';
 
@@ -113,20 +118,24 @@ export function MemberWorkoutsPage() {
         <button
           type="button"
           onClick={() => openForWorkout()}
-          className="inline-flex min-h-[39px] items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[10px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
+          className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[10px] font-bold text-[#22251f] hover:bg-[#c8eb55]"
         >
           ＋ Registrar mi sesión
         </button>
       </div>
 
-      <section className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
-        {workouts.map((workout, idx) => {
-          const orderNum = String(workout.display_order || idx + 1).padStart(2, '0');
-          return (
-            <article
-              key={workout.id}
-              className="relative flex min-h-[205px] items-end overflow-hidden bg-[#181c17] p-[21px] text-white sm:min-h-[220px]"
-            >
+      {workoutsQuery.isLoading ? (
+        <DetailCardsGridSkeleton variant="workout" count={4} />
+      ) : (
+        <section className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
+          {workouts.map((workout, idx) => {
+            const orderNum = String(workout.display_order || idx + 1).padStart(2, '0');
+            return (
+              <article
+                key={workout.id}
+                style={staggerStyle(idx)}
+                className="lobo-stagger-item lobo-card-interactive relative flex min-h-[205px] items-end overflow-hidden bg-[#181c17] p-[21px] text-white sm:min-h-[220px]"
+              >
               {workout.image_url ? (
                 <img
                   src={workout.image_url}
@@ -167,9 +176,10 @@ export function MemberWorkoutsPage() {
                 </div>
               </div>
             </article>
-          );
-        })}
-      </section>
+            );
+          })}
+        </section>
+      )}
 
       <section className="overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white">
         <div className="border-b border-[#f0f1ec] px-[18px] py-[14px]">
@@ -182,9 +192,7 @@ export function MemberWorkoutsPage() {
         </div>
 
         {logsQuery.isLoading ? (
-          <p className="py-10 text-center text-[10px] text-[#73756e]">
-            Cargando tus entrenamientos...
-          </p>
+          <TableSkeleton rows={4} cols={6} />
         ) : logs.length === 0 ? (
           <p className="py-10 text-center text-[10px] text-[#73756e]">
             Aún no registras sesiones personales.
@@ -261,14 +269,14 @@ export function MemberWorkoutsPage() {
       {modalOpen
         ? createPortal(
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+              className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
               role="dialog"
               aria-modal="true"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setModalOpen(false);
               }}
             >
-              <div className="w-[min(450px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+              <div className="lobo-modal-enter w-[min(450px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
                 <div className="mb-4 flex items-start justify-between">
                   <div>
                     <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">

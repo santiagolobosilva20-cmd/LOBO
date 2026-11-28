@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, requestJson } from '../../shared/api/http';
 import type { AuthConfigStatus, SingleResponse, UserRole } from '../../shared/api/types';
+import { SkeletonBlock } from '../../shared/components/Skeletons';
 import { useAuth } from './AuthContext';
 
 type AuthMode = 'login' | 'register';
@@ -71,7 +72,7 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen bg-[#f3f4ef] px-4 py-8 sm:px-8 sm:py-12">
-      <div className="mx-auto grid max-w-[1040px] overflow-hidden rounded-[4px] border border-[#e7e8e2] bg-white lg:grid-cols-12">
+      <div className="lobo-view-enter mx-auto grid max-w-[1040px] overflow-hidden rounded-[4px] border border-[#e7e8e2] bg-white lg:grid-cols-12">
         <section className="relative flex min-h-[280px] flex-col justify-between overflow-hidden bg-[#181c17] p-7 text-white sm:p-10 lg:col-span-6 lg:min-h-[600px]">
           <img
             src="/images/hero-gym.jpg"
@@ -221,7 +222,7 @@ export function AuthPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[12px] font-bold text-[#22251f] transition-colors hover:bg-[#c8eb55] disabled:opacity-60"
+              className="lobo-pressable inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[3px] bg-[#d3f36b] px-4 text-[12px] font-bold text-[#22251f] hover:bg-[#c8eb55] disabled:opacity-60"
             >
               {submitting
                 ? 'Validando...'
@@ -232,8 +233,21 @@ export function AuthPage() {
             </button>
           </form>
 
-          {demoEnabled ? (
-            <div className="mt-7 border-t border-[#eceee7] pt-5">
+          {configQuery.isLoading ? (
+            <div
+              className="mt-7 border-t border-[#eceee7] pt-5"
+              role="status"
+              aria-busy="true"
+              aria-label="Cargando opciones de acceso"
+            >
+              <SkeletonBlock className="h-2.5 w-36" />
+              <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                <SkeletonBlock className="h-[38px] w-full rounded-[3px]" />
+                <SkeletonBlock className="h-[38px] w-full rounded-[3px]" />
+              </div>
+            </div>
+          ) : demoEnabled ? (
+            <div className="lobo-view-enter mt-7 border-t border-[#eceee7] pt-5">
               <span className="block text-[9px] font-bold tracking-[0.04em] text-[#8b8e84] uppercase">
                 ACCESO RÁPIDO EN ENTORNO LOCAL
               </span>
@@ -242,7 +256,7 @@ export function AuthPage() {
                   type="button"
                   disabled={submitting}
                   onClick={() => void handleDemo('member')}
-                  className="inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[3px] border border-[#e2e4dc] bg-[#f8f9f5] px-3 text-[10px] font-bold text-[#22251f] hover:border-[#22251f] hover:bg-[#d3f36b]"
+                  className="lobo-pressable inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[3px] border border-[#e2e4dc] bg-[#f8f9f5] px-3 text-[10px] font-bold text-[#22251f] hover:border-[#22251f] hover:bg-[#d3f36b]"
                 >
                   <User className="h-3.5 w-3.5" aria-hidden="true" />
                   Socio · Alex Rivera
@@ -251,7 +265,7 @@ export function AuthPage() {
                   type="button"
                   disabled={submitting}
                   onClick={() => void handleDemo('admin')}
-                  className="inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[3px] border border-[#e2e4dc] bg-[#22251f] px-3 text-[10px] font-bold text-white hover:bg-[#363a31]"
+                  className="lobo-pressable inline-flex min-h-[38px] items-center justify-center gap-2 rounded-[3px] border border-[#e2e4dc] bg-[#22251f] px-3 text-[10px] font-bold text-white hover:bg-[#363a31]"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-[#d3f36b]" aria-hidden="true" />
                   Administrador LOBO

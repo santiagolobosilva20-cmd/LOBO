@@ -126,7 +126,7 @@ export function RegisterPaymentModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
+      className="lobo-backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-[#1c201b]/75 p-3.5 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialog-title"
@@ -136,7 +136,7 @@ export function RegisterPaymentModal({
         }
       }}
     >
-      <div className="w-[min(440px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
+      <div className="lobo-modal-enter w-[min(440px,100%)] rounded-[4px] bg-white p-6 shadow-[0_20px_70px_rgba(23,26,22,0.44)]">
         <div className="mb-[21px] flex items-start justify-between">
           <div>
             <span className="block text-[9px] font-bold text-[#8b8e84] uppercase">CAJA LOBO</span>
@@ -246,7 +246,7 @@ export function RegisterPaymentModal({
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="mt-1 flex min-h-[39px] w-full items-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037] disabled:opacity-50"
+            className="lobo-pressable mt-1 flex min-h-[39px] w-full items-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white hover:bg-[#3b4037] disabled:opacity-50"
           >
             <span>{mutation.isPending ? 'Guardando ingreso...' : 'Guardar ingreso'}</span>
             <span className="ml-auto text-[15px] leading-none">→</span>

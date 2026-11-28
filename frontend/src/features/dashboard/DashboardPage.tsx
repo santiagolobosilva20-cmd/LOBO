@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { requestJson } from '../../shared/api/http';
 import type { DashboardSummary, SingleResponse } from '../../shared/api/types';
 import { KpiCard } from '../../shared/components/KpiCard';
+import { FeaturedSessionsSkeleton, TableSkeleton } from '../../shared/components/Skeletons';
 import { formatWeekdayProgressLabel } from '../../shared/utils/format';
 import { PaymentsTable } from '../billing/PaymentsTable';
 import { RegisterPaymentModal } from '../billing/RegisterPaymentModal';
@@ -110,7 +111,7 @@ export function DashboardPage() {
           <button
             type="button"
             onClick={() => setPaymentModalOpen(true)}
-            className="inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] transition-all hover:-translate-y-px hover:bg-[#c5eb50]"
+            className="lobo-pressable inline-flex min-h-[39px] items-center justify-center gap-[9px] rounded-[3px] bg-[#d3f36b] px-[15px] text-[10px] font-bold text-[#22251f] hover:bg-[#c5eb50]"
           >
             <span className="text-[15px] leading-none">＋</span> Registrar ingreso
           </button>
@@ -134,15 +135,19 @@ export function DashboardPage() {
 
       <section aria-label="Indicadores del mes" className="grid grid-cols-2 gap-[8px] sm:gap-[12px] xl:grid-cols-4">
         <KpiCard
+          index={0}
+          loading={summaryQuery.isLoading}
           label="Ingresos del mes"
-          value={summaryQuery.isLoading ? '...' : (kpis?.formatted_monthly_revenue ?? '$0.00')}
-          subtitle={summaryQuery.isLoading ? 'Cargando movimientos...' : 'Pagos registrados este mes'}
+          value={kpis?.formatted_monthly_revenue ?? '$0.00'}
+          subtitle="Pagos registrados este mes"
           icon={<DollarSign className="h-[13px] w-[13px] stroke-[2.1] text-[#22251f]" />}
           iconBgClass="bg-[#d3f36b]"
         />
         <KpiCard
+          index={1}
+          loading={summaryQuery.isLoading}
           label="Socios activos"
-          value={summaryQuery.isLoading ? '...' : (kpis?.active_members_count ?? 0)}
+          value={kpis?.active_members_count ?? 0}
           subtitle={
             (kpis?.active_memberships_count ?? 0) > 0
               ? `${kpis?.active_memberships_count} membresías vigentes`
@@ -152,13 +157,17 @@ export function DashboardPage() {
           iconBgClass="bg-[#ffe0d8]"
         />
         <KpiCard
+          index={2}
+          loading={summaryQuery.isLoading}
           label="Pagos registrados"
-          value={summaryQuery.isLoading ? '...' : (kpis?.monthly_payments_count ?? 0)}
+          value={kpis?.monthly_payments_count ?? 0}
           subtitle="Movimientos de este mes"
           icon={<TrendingUp className="h-[13px] w-[13px] stroke-[1.9] text-[#22251f]" />}
           iconBgClass="bg-[#dceefa]"
         />
         <KpiCard
+          index={3}
+          loading={summaryQuery.isLoading}
           label="Próxima clase"
           value={
             <>
@@ -198,29 +207,35 @@ export function DashboardPage() {
               </Link>
             </div>
 
-            <PaymentsTable payments={recentPayments} />
+            {summaryQuery.isLoading ? (
+              <TableSkeleton rows={4} cols={6} />
+            ) : (
+              <>
+                <PaymentsTable payments={recentPayments} />
 
-            {recentPayments.length === 0 ? (
-              <div className="px-5 py-[24px] text-center text-[#73756e]">
-                <div
-                  className="mx-auto mb-[10px] grid h-8 w-8 place-items-center rounded-full bg-[#d3f36b] text-[18px] leading-none text-[#22251f]"
-                  aria-hidden="true"
-                >
-                  +
-                </div>
-                <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
-                  Aún no hay ingresos
-                </strong>
-                <p className="mt-1.5 mb-3.5 text-[10px]">Registra el primer pago para empezar.</p>
-                <button
-                  type="button"
-                  onClick={() => setPaymentModalOpen(true)}
-                  className="mt-[3px] inline-flex min-h-[39px] items-center justify-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#3b4037]"
-                >
-                  Registrar ingreso
-                </button>
-              </div>
-            ) : null}
+                {recentPayments.length === 0 ? (
+                  <div className="px-5 py-[24px] text-center text-[#73756e]">
+                    <div
+                      className="mx-auto mb-[10px] grid h-8 w-8 place-items-center rounded-full bg-[#d3f36b] text-[18px] leading-none text-[#22251f]"
+                      aria-hidden="true"
+                    >
+                      +
+                    </div>
+                    <strong className="font-display block text-[14px] font-semibold text-[#22251f]">
+                      Aún no hay ingresos
+                    </strong>
+                    <p className="mt-1.5 mb-3.5 text-[10px]">Registra el primer pago para empezar.</p>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentModalOpen(true)}
+                      className="lobo-pressable mt-[3px] inline-flex min-h-[39px] items-center justify-center rounded-[3px] bg-[#22251f] px-[15px] text-[10px] font-bold text-white hover:bg-[#3b4037]"
+                    >
+                      Registrar ingreso
+                    </button>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
 
           <p className="mt-[13px] text-[9px] text-[#999b93]">
@@ -248,35 +263,39 @@ export function DashboardPage() {
               </Link>
             </div>
 
-            <div className="px-[17px]">
-              {featured.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex min-h-[62px] items-center gap-[10px] border-b border-[#eff0eb] last:border-b-0"
-                >
-                  <div className="font-display tabular-nums flex w-[39px] shrink-0 flex-col text-[11px] font-semibold text-[#22251f]">
-                    {item.time}
-                    <small className="mt-0.5 font-sans text-[8px] font-semibold text-[#9c9e96]">
-                      {item.period}
-                    </small>
+            {summaryQuery.isLoading ? (
+              <FeaturedSessionsSkeleton count={3} />
+            ) : (
+              <div className="px-[17px]">
+                {featured.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex min-h-[62px] items-center gap-[10px] border-b border-[#eff0eb] last:border-b-0"
+                  >
+                    <div className="font-display tabular-nums flex w-[39px] shrink-0 flex-col text-[11px] font-semibold text-[#22251f]">
+                      {item.time}
+                      <small className="mt-0.5 font-sans text-[8px] font-semibold text-[#9c9e96]">
+                        {item.period}
+                      </small>
+                    </div>
+                    <span
+                      className="h-[31px] w-[3px] shrink-0 rounded-[5px]"
+                      style={{ backgroundColor: item.color }}
+                      aria-hidden="true"
+                    />
+                    <div className="grid min-w-0 gap-1">
+                      <strong className="truncate text-[10px] font-bold text-[#363932]">
+                        {item.name}
+                      </strong>
+                      <span className="text-[9px] text-[#999b93]">{item.meta}</span>
+                    </div>
+                    <span className="tabular-nums ml-auto text-[9px] whitespace-nowrap text-[#85877f]">
+                      {item.ratio}
+                    </span>
                   </div>
-                  <span
-                    className="h-[31px] w-[3px] shrink-0 rounded-[5px]"
-                    style={{ backgroundColor: item.color }}
-                    aria-hidden="true"
-                  />
-                  <div className="grid min-w-0 gap-1">
-                    <strong className="truncate text-[10px] font-bold text-[#363932]">
-                      {item.name}
-                    </strong>
-                    <span className="text-[9px] text-[#999b93]">{item.meta}</span>
-                  </div>
-                  <span className="tabular-nums ml-auto text-[9px] whitespace-nowrap text-[#85877f]">
-                    {item.ratio}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mx-[17px] mt-[7px] flex items-center justify-between border-t border-[#eff0eb] pt-3 pb-[13px] text-[9px] text-[#898b83]">

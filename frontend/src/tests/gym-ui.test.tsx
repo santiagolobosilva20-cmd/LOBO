@@ -10,6 +10,8 @@ import { NutritionPage } from '../features/nutrition/NutritionPage';
 import { PlansPage } from '../features/plans/PlansPage';
 import { RoutinesPage } from '../features/routines/RoutinesPage';
 import { ApiError, extractApiError, requestJson, setAuthToken } from '../shared/api/http';
+import { KpiCard } from '../shared/components/KpiCard';
+import { DetailCardsGridSkeleton, TableSkeleton } from '../shared/components/Skeletons';
 import { ToastProvider } from '../shared/components/ToastContext';
 import {
   formatCurrencyFromCents,
@@ -466,5 +468,124 @@ describe('LOBO Gym Views', () => {
 
     setAuthToken(null);
     fetchSpy.mockRestore();
+  });
+
+  it('renders structural AppHydrationSkeleton while session hydration is pending and then renders the view', async () => {
+    setAuthToken('pending-session-token');
+
+    let resolveAuthMe!: (response: Response) => void;
+    const authMePromise = new Promise<Response>((resolve) => {
+      resolveAuthMe = resolve;
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input.toString();
+
+      if (url.includes('/auth/me')) {
+        return authMePromise;
+      }
+
+      if (url.includes('/auth/config')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: {
+                demo_quick_login_enabled: true,
+                demo_accounts: [],
+              },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            data: [],
+            meta: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    });
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/']}>
+          <AuthProvider>
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const hydrationSkeleton = screen.getByRole('status', { name: 'Cargando aplicación LOBO Club' });
+    expect(hydrationSkeleton).toHaveAttribute('aria-busy', 'true');
+
+    resolveAuthMe(
+      new Response(
+        JSON.stringify({
+          error: { code: 'unauthenticated', message: 'Token expired.' },
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole('status', { name: 'Cargando aplicación LOBO Club' })).not.toBeInTheDocument();
+      expect(screen.getByText('Tu progreso, tu rutina y tu club en un solo lugar.')).toBeInTheDocument();
+    });
+
+    setAuthToken(null);
+    fetchSpy.mockRestore();
+  });
+
+  it('renders accessible loading skeletons for KpiCard, TableSkeleton, DetailCardsGridSkeleton and pending DashboardPage', () => {
+    const neverEndingFetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const { rerender } = render(
+      <div>
+        <KpiCard
+          loading
+          label="Ingresos del mes"
+          value="$0.00"
+          subtitle="Pagos de este mes"
+          icon={<span>$</span>}
+          iconBgClass="bg-[#d3f36b]"
+          index={0}
+        />
+        <TableSkeleton rows={3} cols={4} />
+        <DetailCardsGridSkeleton variant="routine" count={2} />
+      </div>,
+    );
+
+    expect(screen.getByRole('status', { name: 'Cargando Ingresos del mes' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    expect(screen.getByRole('status', { name: 'Cargando registros' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: 'Cargando rutinas' })).toHaveAttribute('aria-busy', 'true');
+
+    rerender(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <ToastProvider>
+            <DashboardPage />
+          </ToastProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole('status', { name: 'Cargando registros' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: 'Cargando clases' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByText('Cargando movimientos...')).not.toBeInTheDocument();
+
+    neverEndingFetch.mockRestore();
   });
 });

@@ -10,6 +10,10 @@
   --coral: #ff8068;
   --blue: #a7d2ef;
   --bg-canvas: #f3f4ef;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @theme {
@@ -37,11 +41,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.view-appear {
-  animation: loboAppear 0.35s both;
+.live-dot-ring {
+  background-color: #80bd42;
+  box-shadow: 0 0 0 3px #eaf5dd;
 }
 
-@keyframes loboAppear {
+@keyframes loboFade {
   from {
     opacity: 0;
   }
@@ -50,7 +55,181 @@ body {
   }
 }
 
-.live-dot-ring {
-  background-color: #80bd42;
-  box-shadow: 0 0 0 3px #eaf5dd;
+@keyframes loboViewEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loboItemEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loboModalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes loboDrawerEnter {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes loboShimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes loboSkeletonPulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.lobo-view-enter,
+.view-appear {
+  animation: loboViewEnter 220ms var(--ease-out) both;
+}
+
+.lobo-stagger-item {
+  animation: loboItemEnter 240ms var(--ease-out) both;
+  animation-delay: calc(min(var(--stagger-index, 0), 6) * 45ms);
+}
+
+.lobo-backdrop-enter {
+  animation: loboFade 180ms var(--ease-out) both;
+}
+
+.lobo-modal-enter {
+  transform-origin: center;
+  animation: loboModalEnter 220ms var(--ease-out) both;
+}
+
+.lobo-drawer-enter {
+  animation: loboDrawerEnter 280ms var(--ease-drawer) both;
+}
+
+.lobo-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #e9ebe4;
+}
+
+.lobo-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.58) 50%,
+    transparent 100%
+  );
+  animation: loboShimmer 1.35s linear infinite;
+}
+
+.lobo-skeleton-dark {
+  position: relative;
+  overflow: hidden;
+  background-color: #2c3128;
+}
+
+.lobo-skeleton-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: loboShimmer 1.35s linear infinite;
+}
+
+.lobo-pressable {
+  transition:
+    transform 150ms var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.lobo-pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.lobo-card-interactive {
+  transition:
+    transform 180ms var(--ease-out),
+    border-color 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lobo-pressable:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .lobo-card-interactive:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobo-view-enter,
+  .view-appear,
+  .lobo-stagger-item,
+  .lobo-modal-enter,
+  .lobo-drawer-enter {
+    animation-name: loboFade;
+    animation-duration: 180ms;
+    animation-delay: 0ms;
+  }
+
+  .lobo-skeleton::after,
+  .lobo-skeleton-dark::after {
+    animation: loboSkeletonPulse 1.6s ease-in-out infinite;
+    background: none;
+  }
+
+  .lobo-pressable,
+  .lobo-card-interactive {
+    transition-property: background-color, border-color, color, opacity;
+  }
+
+  .lobo-pressable:active:not(:disabled),
+  .lobo-pressable:hover:not(:disabled),
+  .lobo-card-interactive:hover {
+    transform: none;
+  }
 }

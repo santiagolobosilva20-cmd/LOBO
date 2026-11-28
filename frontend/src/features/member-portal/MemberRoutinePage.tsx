@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DetailCardsGridSkeleton, staggerStyle } from '../../shared/components/Skeletons';
 import { getRoutineGoalLabel, getWorkoutLevelLabel } from '../../shared/utils/format';
 import { useMemberRoutinesQuery } from './memberQueries';
 
@@ -47,9 +48,7 @@ export function MemberRoutinePage() {
       </div>
 
       {routinesQuery.isLoading ? (
-        <div className="rounded-[3px] border border-[#e7e8e2] bg-white p-10 text-center text-[10px] text-[#73756e]">
-          Cargando rutinas...
-        </div>
+        <DetailCardsGridSkeleton variant="routine" count={2} />
       ) : routines.length === 0 ? (
         <div className="rounded-[3px] border border-[#e7e8e2] bg-white p-10 text-center text-[#73756e]">
           <strong className="font-display block text-[15px] font-semibold text-[#22251f]">
@@ -65,10 +64,11 @@ export function MemberRoutinePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-[15px] lg:grid-cols-2">
-          {routines.map((routine) => (
+          {routines.map((routine, idx) => (
             <article
               key={routine.id}
-              className="overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white"
+              style={staggerStyle(idx)}
+              className="lobo-stagger-item overflow-hidden rounded-[3px] border border-[#e7e8e2] bg-white"
             >
               <div className="border-b border-[#f0f1ec] p-[18px]">
                 <div className="flex flex-wrap items-center gap-1.5">

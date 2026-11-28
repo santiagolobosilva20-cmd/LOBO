@@ -218,13 +218,13 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div className="w-[244px] border-r border-[#e8e9e3] bg-white shadow-[10px_0_30px_rgba(23,26,22,0.08)]">
+          <div className="lobo-drawer-enter w-[244px] border-r border-[#e8e9e3] bg-white shadow-[10px_0_30px_rgba(23,26,22,0.08)]">
             {sidebarContent}
           </div>
           <button
             type="button"
             aria-label="Cerrar menú lateral"
-            className="flex-1 bg-black/30"
+            className="lobo-backdrop-enter flex-1 bg-black/30"
             onClick={() => setMobileOpen(false)}
           />
         </div>
@@ -259,7 +259,9 @@ export function AppShell({ clubStatus, children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="view-appear pt-[17px] md:pt-[26px]">{children}</main>
+        <main key={location.pathname} className="lobo-view-enter pt-[17px] md:pt-[26px]">
+          {children}
+        </main>
       </div>
     </div>
   );
